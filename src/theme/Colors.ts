@@ -1,24 +1,26 @@
 export const Colors = {
   light: {
-    background: '#F5F5F5',
+    background: '#F8F9FA',
     surface: '#FFFFFF',
-    text: '#212121',
-    textSecondary: '#757575',
-    primary: '#6200EE',
-    accent: '#03DAC6',
-    border: '#E0E0E0',
-    pinned: '#FFD700',
-    danger: '#B00020',
+    text: '#1A1A1A',
+    textSecondary: '#6C757D',
+    primary: '#6366F1', // Indigo
+    accent: '#10B981', // Emerald
+    border: '#E9ECEF',
+    pinned: '#F59E0B', // Amber
+    danger: '#EF4444', // Rose
+    cardShadow: 'rgba(0, 0, 0, 0.05)',
   },
   dark: {
-    background: '#121212',
-    surface: '#1E1E1E',
-    text: '#E1E1E1',
-    textSecondary: '#B0B0B0',
-    primary: '#BB86FC',
-    accent: '#03DAC6',
-    border: '#333333',
-    pinned: '#FFD700',
-    danger: '#CF6679',
+    background: '#0F172A',
+    surface: '#1E293B',
+    text: '#F8FAFC',
+    textSecondary: '#94A3B8',
+    primary: '#818CF8',
+    accent: '#34D399',
+    border: '#334155',
+    pinned: '#FBBF24',
+    danger: '#F87171',
+    cardShadow: 'rgba(0, 0, 0, 0.3)',
   }
 };

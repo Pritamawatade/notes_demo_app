@@ -38,18 +38,23 @@ export const HomeScreen = () => {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
       
+      <View style={styles.headerSection}>
+        <Text style={[styles.greeting, { color: theme.textSecondary }]}>Hello!</Text>
+        <Text style={[styles.appName, { color: theme.text }]}>Your Notes</Text>
+      </View>
+
       <View style={[styles.searchContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-        <MaterialIcons name="search" size={24} color={theme.textSecondary} />
+        <MaterialIcons name="search" size={20} color={theme.textSecondary} />
         <TextInput
           style={[styles.searchInput, { color: theme.text }]}
-          placeholder="Search notes..."
+          placeholder="Search your thoughts..."
           placeholderTextColor={theme.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialIcons name="close" size={24} color={theme.textSecondary} />
+            <MaterialIcons name="close" size={20} color={theme.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -64,21 +69,26 @@ export const HomeScreen = () => {
           />
         )}
         contentContainerStyle={styles.listContent}
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <MaterialIcons name="note-add" size={64} color={theme.textSecondary} />
+            <View style={[styles.emptyIconContainer, { backgroundColor: theme.surface }]}>
+              <MaterialIcons name="note-add" size={40} color={theme.primary} />
+            </View>
             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-              {searchQuery ? 'No notes found matching your search' : 'No notes yet. Create your first one!'}
+              {searchQuery ? 'No matches found.' : 'Capture your first great idea!'}
             </Text>
           </View>
         }
       />
 
       <TouchableOpacity 
-        style={[styles.fab, { backgroundColor: theme.primary }]}
+        style={[styles.fab, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
         onPress={() => navigation.navigate('Editor')}
+        activeOpacity={0.9}
       >
-        <MaterialIcons name="add" size={30} color="#FFF" />
+        <MaterialIcons name="add" size={32} color="#FFF" />
       </TouchableOpacity>
     </View>
   );
@@ -87,49 +97,86 @@ export const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 10,
+  },
+  headerSection: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    marginBottom: 10,
+  },
+  greeting: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  appName: {
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: -1,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: 16,
-    paddingHorizontal: 12,
-    height: 50,
-    borderRadius: 25,
+    marginHorizontal: 20,
+    marginVertical: 16,
+    paddingHorizontal: 16,
+    height: 56,
+    borderRadius: 20,
     borderWidth: 1,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: 10,
     fontSize: 16,
+    fontWeight: '500',
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 80,
+    paddingHorizontal: 12,
+    paddingBottom: 100,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
   },
   emptyContainer: {
     alignItems: 'center',
-    marginTop: 100,
+    marginTop: 80,
+    width: '100%',
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   emptyText: {
-    marginTop: 16,
     fontSize: 16,
+    fontWeight: '500',
     textAlign: 'center',
     paddingHorizontal: 40,
   },
   fab: {
     position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    right: 24,
+    bottom: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
+    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
   },
 });

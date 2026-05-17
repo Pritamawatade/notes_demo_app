@@ -15,59 +15,82 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress }) => {
 
   return (
     <TouchableOpacity 
-      style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]} 
+      style={[
+        styles.card, 
+        { 
+          backgroundColor: theme.surface, 
+          borderColor: theme.border,
+          shadowColor: theme.cardShadow 
+        }
+      ]} 
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
           {note.title || 'Untitled'}
         </Text>
         {note.is_pinned === 1 && (
-          <MaterialIcons name="push-pin" size={18} color={theme.pinned} />
+          <View style={[styles.pinBadge, { backgroundColor: theme.pinned + '20' }]}>
+            <MaterialIcons name="push-pin" size={14} color={theme.pinned} />
+          </View>
         )}
       </View>
       <Text style={[styles.content, { color: theme.textSecondary }]} numberOfLines={3}>
         {note.content}
       </Text>
-      <Text style={[styles.date, { color: theme.textSecondary }]}>
-        {new Date(note.updated_at).toLocaleDateString()}
-      </Text>
+      <View style={styles.footer}>
+        <Text style={[styles.date, { color: theme.textSecondary }]}>
+          {new Date(note.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+        </Text>
+        {note.reminder_time && (
+          <MaterialIcons name="alarm" size={14} color={theme.accent} />
+        )}
+      </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: 20,
+    borderRadius: 24,
+    marginBottom: 16,
     borderWidth: 1,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     flex: 1,
     marginRight: 8,
+    letterSpacing: -0.5,
+  },
+  pinBadge: {
+    padding: 4,
+    borderRadius: 8,
   },
   content: {
     fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
+    lineHeight: 22,
+    marginBottom: 12,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   date: {
     fontSize: 12,
-    textAlign: 'right',
+    fontWeight: '500',
   },
 });
