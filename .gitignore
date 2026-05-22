@@ -1,5 +1,5 @@
 # Dependencies
-./node_modules
+node_modules/
 
 # Expo
 .expo/
@@ -34,4 +34,3 @@ Thumbs.db
 
 # TypeScript
 tsconfig.tsbuildinfo
-node_modules/.bin/
