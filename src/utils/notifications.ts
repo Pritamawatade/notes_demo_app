@@ -17,8 +17,7 @@ const createDateTrigger = (date: Date) => {
 export const setupNotifications = async () => {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
+      shouldShowAlert: true,
       shouldPlaySound: true,
       shouldSetBadge: false,
     }),
@@ -36,7 +35,7 @@ export const setupNotifications = async () => {
   }
 
   if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('default', {
+    await Notifications.setNotificationChannelAsync('default', {
       name: 'default',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
@@ -45,7 +44,11 @@ export const setupNotifications = async () => {
   }
 
   // Schedule motivation on startup
-  await scheduleMotivationalNotifications();
+  try {
+    await scheduleMotivationalNotifications();
+  } catch (error) {
+    console.error('Error in setupNotifications:', error);
+  }
 
   return true;
 };
