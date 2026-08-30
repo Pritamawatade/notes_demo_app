@@ -1,26 +1,36 @@
 export const Colors = {
   light: {
-    background: '#F8F9FA',
+    background: '#FFF6EE',
     surface: '#FFFFFF',
-    text: '#1A1A1A',
-    textSecondary: '#6C757D',
-    primary: '#6366F1', // Indigo
-    accent: '#10B981', // Emerald
-    border: '#E9ECEF',
-    pinned: '#F59E0B', // Amber
-    danger: '#EF4444', // Rose
-    cardShadow: 'rgba(0, 0, 0, 0.05)',
+    surfaceMuted: '#FFE8D4',
+    text: '#1F140C',
+    textSecondary: '#8B6B52',
+    primary: '#E85D04',
+    primarySoft: '#FFF0E4',
+    accent: '#F4A261',
+    border: '#F0D4BE',
+    pinned: '#E9A825',
+    danger: '#E11D48',
+    cardShadow: 'rgba(185, 70, 8, 0.12)',
+    tabBar: '#FFFFFF',
+    overlay: 'rgba(31, 20, 12, 0.45)',
   },
   dark: {
-    background: '#0F172A',
-    surface: '#1E293B',
-    text: '#F8FAFC',
-    textSecondary: '#94A3B8',
-    primary: '#818CF8',
-    accent: '#34D399',
-    border: '#334155',
+    background: '#16100C',
+    surface: '#241A14',
+    surfaceMuted: '#3A2618',
+    text: '#FFF4EA',
+    textSecondary: '#C4A484',
+    primary: '#FB923C',
+    primarySoft: '#3A2416',
+    accent: '#FDBA74',
+    border: '#3D2A1C',
     pinned: '#FBBF24',
-    danger: '#F87171',
-    cardShadow: 'rgba(0, 0, 0, 0.3)',
-  }
+    danger: '#FB7185',
+    cardShadow: 'rgba(0, 0, 0, 0.45)',
+    tabBar: '#1C1410',
+    overlay: 'rgba(0, 0, 0, 0.6)',
+  },
 };
+
+export type ThemeColors = typeof Colors.light;

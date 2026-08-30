@@ -1,13 +1,7 @@
 import React from 'react';
-import { 
-  Modal, 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  useColorScheme 
-} from 'react-native';
-import { Colors } from '../theme/Colors';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useTheme } from '../theme/useTheme';
 
 interface ReminderModalProps {
   isVisible: boolean;
@@ -15,21 +9,24 @@ interface ReminderModalProps {
   onSelectReminder: (date: Date) => void;
 }
 
-export const ReminderModal: React.FC<ReminderModalProps> = ({ isVisible, onClose, onSelectReminder }) => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
+export const ReminderModal: React.FC<ReminderModalProps> = ({
+  isVisible,
+  onClose,
+  onSelectReminder,
+}) => {
+  const { theme } = useTheme();
 
   const presets = [
-    { label: '5 Min', value: 5 },
-    { label: '10 Min', value: 10 },
-    { label: '20 Min', value: 20 },
-    { label: '1 Hour', value: 60 },
-    { label: 'Today (8 PM)', value: 'today_8pm' },
-    { label: 'Tomorrow (9 AM)', value: 'tomorrow_9am' },
+    { label: '5 minutes', value: 5, icon: 'timer' as const },
+    { label: '10 minutes', value: 10, icon: 'timer' as const },
+    { label: '20 minutes', value: 20, icon: 'timer' as const },
+    { label: '1 hour', value: 60, icon: 'schedule' as const },
+    { label: 'Tonight, 8 PM', value: 'today_8pm', icon: 'nights-stay' as const },
+    { label: 'Tomorrow, 9 AM', value: 'tomorrow_9am', icon: 'wb-sunny' as const },
   ];
 
-  const handlePreset = (preset: any) => {
-    let date = new Date();
+  const handlePreset = (preset: (typeof presets)[number]) => {
+    const date = new Date();
     if (typeof preset.value === 'number') {
       date.setMinutes(date.getMinutes() + preset.value);
     } else if (preset.value === 'today_8pm') {
@@ -44,33 +41,38 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isVisible, onClose
   };
 
   return (
-    <Modal visible={isVisible} transparent animationType="fade">
-      <TouchableOpacity 
-        style={styles.overlay} 
-        activeOpacity={1} 
-        onPress={onClose}
-      >
-        <View style={[styles.content, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.title, { color: theme.text }]}>Add Reminder</Text>
-          <View style={styles.grid}>
+    <Modal visible={isVisible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={[styles.overlay, { backgroundColor: theme.overlay }]} onPress={onClose}>
+        <Pressable style={[styles.sheet, { backgroundColor: theme.surface }]} onPress={() => {}}>
+          <View style={[styles.handle, { backgroundColor: theme.border }]} />
+          <Text style={[styles.title, { color: theme.text }]}>Remind me</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+            Pick a time to come back to this note
+          </Text>
+          <View style={styles.list}>
             {presets.map((preset) => (
               <TouchableOpacity
                 key={preset.label}
-                style={[styles.presetButton, { borderColor: theme.border }]}
+                style={[styles.row, { borderColor: theme.border, backgroundColor: theme.background }]}
                 onPress={() => handlePreset(preset)}
+                activeOpacity={0.8}
               >
-                <Text style={{ color: theme.primary }}>{preset.label}</Text>
+                <View style={[styles.iconWrap, { backgroundColor: theme.primarySoft }]}>
+                  <MaterialIcons name={preset.icon} size={18} color={theme.primary} />
+                </View>
+                <Text style={[styles.rowLabel, { color: theme.text }]}>{preset.label}</Text>
+                <MaterialIcons name="chevron-right" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity 
-            style={[styles.cancelButton, { backgroundColor: theme.background }]} 
+          <TouchableOpacity
+            style={[styles.cancelButton, { backgroundColor: theme.surfaceMuted }]}
             onPress={onClose}
           >
-            <Text style={{ color: theme.textSecondary }}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: theme.text }]}>Cancel</Text>
           </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 };
@@ -78,39 +80,65 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({ isVisible, onClose
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
-  content: {
-    width: '80%',
-    padding: 20,
-    borderRadius: 15,
-    elevation: 5,
+  sheet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 28,
+  },
+  handle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontSize: 22,
+    fontWeight: '800',
     textAlign: 'center',
   },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  subtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 18,
   },
-  presetButton: {
-    width: '48%',
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 8,
+  list: {
+    gap: 8,
+  },
+  row: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  iconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  rowLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
   },
   cancelButton: {
-    marginTop: 10,
-    padding: 12,
-    borderRadius: 8,
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 14,
     alignItems: 'center',
+  },
+  cancelText: {
+    fontWeight: '700',
+    fontSize: 15,
   },
 });

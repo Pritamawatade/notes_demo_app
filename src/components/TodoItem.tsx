@@ -1,14 +1,8 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  useColorScheme 
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Todo } from '../database/db';
-import { Colors } from '../theme/Colors';
+import { useTheme } from '../theme/useTheme';
 
 interface TodoItemProps {
   todo: Todo;
@@ -17,37 +11,42 @@ interface TodoItemProps {
 }
 
 export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onDelete }) => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
+  const { theme } = useTheme();
+  const done = todo.is_completed === 1;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-      <TouchableOpacity 
-        style={styles.checkbox} 
-        onPress={onToggle}
-        activeOpacity={0.7}
-      >
-        <MaterialIcons 
-          name={todo.is_completed ? "check-circle" : "radio-button-unchecked"} 
-          size={26} 
-          color={todo.is_completed ? theme.primary : theme.textSecondary} 
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.border,
+          opacity: done ? 0.72 : 1,
+        },
+      ]}
+    >
+      <TouchableOpacity style={styles.checkbox} onPress={onToggle} activeOpacity={0.7}>
+        <MaterialIcons
+          name={done ? 'check-circle' : 'radio-button-unchecked'}
+          size={26}
+          color={done ? theme.primary : theme.textSecondary}
         />
       </TouchableOpacity>
-      
-      <Text 
+
+      <Text
         style={[
-          styles.text, 
-          { 
-            color: todo.is_completed ? theme.textSecondary : theme.text,
-            textDecorationLine: todo.is_completed ? 'line-through' : 'none'
-          }
+          styles.text,
+          {
+            color: done ? theme.textSecondary : theme.text,
+            textDecorationLine: done ? 'line-through' : 'none',
+          },
         ]}
       >
         {todo.text}
       </Text>
 
-      <TouchableOpacity onPress={onDelete}>
-        <MaterialIcons name="delete-outline" size={24} color={theme.danger} />
+      <TouchableOpacity onPress={onDelete} hitSlop={8} style={styles.deleteBtn}>
+        <MaterialIcons name="close" size={18} color={theme.textSecondary} />
       </TouchableOpacity>
     </View>
   );
@@ -57,15 +56,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    marginBottom: 10,
     borderWidth: 1,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   checkbox: {
     marginRight: 12,
@@ -73,6 +68,10 @@ const styles = StyleSheet.create({
   text: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  deleteBtn: {
+    padding: 4,
   },
 });

@@ -53,3 +53,10 @@ export const MOTIVATIONAL_QUOTES = [
   "The difference between a successful person and others is not a lack of strength, not a lack of knowledge, but rather a lack of will.",
   "Setting goals is the first step in turning the invisible into the visible."
 ];
+
+export const getDailyQuote = (): string => {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const dayIndex = Math.floor(start.getTime() / 86400000);
+  return MOTIVATIONAL_QUOTES[Math.abs(dayIndex) % MOTIVATIONAL_QUOTES.length];
+};

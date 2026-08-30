@@ -1,63 +1,64 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useColorScheme, ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { EditorScreen } from './src/screens/EditorScreen';
 import { TodoScreen } from './src/screens/TodoScreen';
 import { initDatabase } from './src/database/db';
-import { Colors } from './src/theme/Colors';
+import { useTheme } from './src/theme/useTheme';
 import { setupNotifications } from './src/utils/notifications';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const MainTabs = () => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
+  const { theme } = useTheme();
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ color, size }) => {
-          let iconName: any;
-          if (route.name === 'Notes') iconName = 'description';
-          else if (route.name === 'Todos') iconName = 'playlist-add-check';
-          return <MaterialIcons name={iconName} size={size} color={color} />;
+        headerShown: false,
+        tabBarIcon: ({ color, size, focused }) => {
+          const iconName =
+            route.name === 'Notes'
+              ? focused
+                ? 'edit-note'
+                : 'notes'
+              : focused
+                ? 'check-circle'
+                : 'check-circle-outline';
+          return <MaterialIcons name={iconName as any} size={size + 2} color={color} />;
         },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textSecondary,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '700',
+          marginBottom: Platform.OS === 'android' ? 6 : 0,
+        },
         tabBarStyle: {
-          backgroundColor: theme.surface,
+          backgroundColor: theme.tabBar,
           borderTopColor: theme.border,
-          height: 65,
-          paddingBottom: 10,
-          paddingTop: 10,
+          borderTopWidth: 1,
+          height: Platform.OS === 'ios' ? 88 : 68,
+          paddingTop: 8,
         },
-        headerStyle: {
-          backgroundColor: theme.surface,
-          elevation: 0,
-          shadowOpacity: 0,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.border,
-        },
-        headerTintColor: theme.text,
-        headerTitleStyle: { fontWeight: 'bold' },
       })}
     >
-      <Tab.Screen name="Notes" component={HomeScreen} options={{ title: 'My Notes' }} />
-      <Tab.Screen name="Todos" component={TodoScreen} options={{ title: 'My Checklists' }} />
+      <Tab.Screen name="Notes" component={HomeScreen} />
+      <Tab.Screen name="Todos" component={TodoScreen} options={{ title: 'Tasks' }} />
     </Tab.Navigator>
   );
 };
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
+  const { theme, isDark } = useTheme();
 
   useEffect(() => {
     async function prepare() {
@@ -74,6 +75,18 @@ export default function App() {
     prepare();
   }, []);
 
+  const navTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      background: theme.background,
+      card: theme.surface,
+      text: theme.text,
+      border: theme.border,
+      primary: theme.primary,
+    },
+  };
+
   if (!isReady) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
@@ -83,32 +96,27 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: theme.surface,
-            elevation: 0,
-            shadowOpacity: 0,
-            borderBottomWidth: 1,
-            borderBottomColor: theme.border,
-          },
-          headerTintColor: theme.text,
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-        }}
-      >
-        <Stack.Screen 
-          name="Main" 
-          component={MainTabs} 
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen 
-          name="Editor" 
-          component={EditorScreen} 
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer theme={navTheme}>
+        <Stack.Navigator
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: theme.background,
+              elevation: 0,
+              shadowOpacity: 0,
+            },
+            headerTintColor: theme.primary,
+            headerTitleStyle: {
+              fontWeight: '700',
+              color: theme.text,
+            },
+            cardStyle: { backgroundColor: theme.background },
+          }}
+        >
+          <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
+          <Stack.Screen name="Editor" component={EditorScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

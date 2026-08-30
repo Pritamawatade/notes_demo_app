@@ -1,31 +1,44 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  FlatList, 
-  StyleSheet, 
-  TouchableOpacity, 
-  TextInput, 
-  Text, 
-  useColorScheme,
-  StatusBar
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Text,
+  StatusBar,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Note, getNotes } from '../database/db';
 import { NoteCard } from '../components/NoteCard';
-import { Colors } from '../theme/Colors';
+import { useTheme } from '../theme/useTheme';
+import { getDailyQuote } from '../utils/quotes';
+
+const H_PAD = 16;
+const GAP = 12;
 
 export const HomeScreen = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
+  const { theme, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const quote = useMemo(() => getDailyQuote(), []);
+
+  const cardWidth = (width - H_PAD * 2 - GAP) / 2;
 
   const loadNotes = useCallback(async () => {
-    const fetchedNotes = await getNotes(searchQuery);
-    setNotes(fetchedNotes);
+    try {
+      const fetchedNotes = await getNotes(searchQuery);
+      setNotes(fetchedNotes);
+    } catch (e) {
+      console.warn(e);
+    }
   }, [searchQuery]);
 
   useEffect(() => {
@@ -34,61 +47,103 @@ export const HomeScreen = () => {
     }
   }, [isFocused, loadNotes]);
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
-      
-      <View style={styles.headerSection}>
-        <Text style={[styles.greeting, { color: theme.textSecondary }]}>Hello!</Text>
-        <Text style={[styles.appName, { color: theme.text }]}>Your Notes</Text>
-      </View>
+  const todayLabel = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
 
-      <View style={[styles.searchContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-        <MaterialIcons name="search" size={20} color={theme.textSecondary} />
-        <TextInput
-          style={[styles.searchInput, { color: theme.text }]}
-          placeholder="Search your thoughts..."
-          placeholderTextColor={theme.textSecondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialIcons name="close" size={20} color={theme.textSecondary} />
-          </TouchableOpacity>
-        )}
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={theme.background} />
+
+      <View style={styles.headerSection}>
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.greeting, { color: theme.textSecondary }]}>{todayLabel}</Text>
+            <Text style={[styles.appName, { color: theme.text }]}>NoteDown</Text>
+          </View>
+          <View style={[styles.countBadge, { backgroundColor: theme.primarySoft }]}>
+            <Text style={[styles.countText, { color: theme.primary }]}>
+              {notes.length} {notes.length === 1 ? 'note' : 'notes'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={[styles.quoteCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <View style={[styles.quoteIcon, { backgroundColor: theme.primarySoft }]}>
+            <MaterialIcons name="format-quote" size={18} color={theme.primary} />
+          </View>
+          <Text style={[styles.quoteText, { color: theme.text }]} numberOfLines={3}>
+            {quote}
+          </Text>
+        </View>
+
+        <View style={[styles.searchContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <MaterialIcons name="search" size={22} color={theme.textSecondary} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.text }]}
+            placeholder="Search notes"
+            placeholderTextColor={theme.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={8}>
+              <MaterialIcons name="close" size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <FlatList
         data={notes}
-        keyExtractor={(item) => item.id!.toString()}
+        key={notes.length === 0 ? 'notes-empty' : 'notes-grid-2'}
+        keyExtractor={(item) => String(item.id)}
+        numColumns={notes.length === 0 ? 1 : 2}
         renderItem={({ item }) => (
-          <NoteCard 
-            note={item} 
-            onPress={() => navigation.navigate('Editor', { note: item })} 
+          <NoteCard
+            note={item}
+            width={cardWidth}
+            onPress={() => navigation.navigate('Editor', { note: item })}
           />
         )}
-        contentContainerStyle={styles.listContent}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
+        columnWrapperStyle={notes.length === 0 ? undefined : styles.columnWrapper}
+        contentContainerStyle={[
+          styles.listContent,
+          notes.length === 0 && styles.emptyListContent,
+        ]}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <View style={[styles.emptyIconContainer, { backgroundColor: theme.surface }]}>
-              <MaterialIcons name="note-add" size={40} color={theme.primary} />
+          <View style={[styles.emptyContainer, { width: width - H_PAD * 2 }]}>
+            <View style={[styles.emptyIconContainer, { backgroundColor: theme.primarySoft }]}>
+              <MaterialIcons name="edit-note" size={42} color={theme.primary} />
             </View>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>
+              {searchQuery ? 'No matching notes' : 'Start writing'}
+            </Text>
             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-              {searchQuery ? 'No matches found.' : 'Capture your first great idea!'}
+              {searchQuery
+                ? 'Try a different search.'
+                : 'Tap the orange button to capture your first idea.'}
             </Text>
           </View>
         }
       />
 
-      <TouchableOpacity 
-        style={[styles.fab, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
+      <TouchableOpacity
+        style={[
+          styles.fab,
+          {
+            backgroundColor: theme.primary,
+            shadowColor: theme.primary,
+            bottom: 20 + insets.bottom,
+          },
+        ]}
         onPress={() => navigation.navigate('Editor')}
         activeOpacity={0.9}
       >
-        <MaterialIcons name="add" size={32} color="#FFF" />
+        <MaterialIcons name="add" size={30} color="#FFF" />
       </TouchableOpacity>
     </View>
   );
@@ -99,34 +154,66 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerSection: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    marginBottom: 10,
+    paddingHorizontal: H_PAD,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 16,
   },
   greeting: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 2,
+    textTransform: 'capitalize',
   },
   appName: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '800',
-    letterSpacing: -1,
+    letterSpacing: -0.8,
+  },
+  countBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginBottom: 4,
+  },
+  countText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  quoteCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  quoteIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quoteText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '500',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
-    marginVertical: 16,
-    paddingHorizontal: 16,
-    height: 56,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    height: 50,
+    borderRadius: 16,
     borderWidth: 1,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    marginBottom: 8,
   },
   searchInput: {
     flex: 1,
@@ -135,48 +222,54 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   listContent: {
-    paddingHorizontal: 12,
-    paddingBottom: 100,
+    paddingHorizontal: H_PAD,
+    paddingTop: 8,
+    paddingBottom: 120,
+  },
+  emptyListContent: {
+    flexGrow: 1,
   },
   columnWrapper: {
     justifyContent: 'space-between',
+    marginBottom: GAP,
   },
   emptyContainer: {
     alignItems: 'center',
-    marginTop: 80,
-    width: '100%',
+    justifyContent: 'center',
+    paddingTop: 48,
+    alignSelf: 'center',
   },
   emptyIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 88,
+    height: 88,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 6,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 24,
+    lineHeight: 22,
   },
   fab: {
     position: 'absolute',
-    right: 24,
-    bottom: 24,
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
     shadowRadius: 12,
   },
 });
