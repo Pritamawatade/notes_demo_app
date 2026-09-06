@@ -7,10 +7,11 @@ import { useTheme } from '../theme/useTheme';
 interface TodoItemProps {
   todo: Todo;
   onToggle: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
-export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onDelete }) => {
+export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onEdit, onDelete }) => {
   const { theme } = useTheme();
   const done = todo.is_completed === 1;
 
@@ -45,7 +46,11 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onDelete }) 
         {todo.text}
       </Text>
 
-      <TouchableOpacity onPress={onDelete} hitSlop={8} style={styles.deleteBtn}>
+      <TouchableOpacity onPress={onEdit} hitSlop={8} style={styles.actionBtn}>
+        <MaterialIcons name="edit" size={18} color={theme.textSecondary} />
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={onDelete} hitSlop={8} style={styles.actionBtn}>
         <MaterialIcons name="close" size={18} color={theme.textSecondary} />
       </TouchableOpacity>
     </View>
@@ -71,7 +76,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 22,
   },
-  deleteBtn: {
+  actionBtn: {
     padding: 4,
+    marginLeft: 8,
   },
 });

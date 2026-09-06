@@ -102,6 +102,10 @@ export const addTodo = async (text: string, type: string): Promise<number> => {
   return result.lastInsertRowId;
 };
 
+export const updateTodo = async (id: number, text: string): Promise<void> => {
+  await db.runAsync('UPDATE todos SET text = ? WHERE id = ?', [text, id]);
+};
+
 export const toggleTodo = async (id: number, currentStatus: number): Promise<void> => {
   await db.runAsync('UPDATE todos SET is_completed = ? WHERE id = ?', [currentStatus === 1 ? 0 : 1, id]);
 };

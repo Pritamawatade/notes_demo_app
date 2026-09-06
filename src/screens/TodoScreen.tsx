@@ -13,7 +13,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Todo, getTodos, addTodo, toggleTodo, deleteTodo } from '../database/db';
+import { Todo, getTodos, addTodo, updateTodo, toggleTodo, deleteTodo } from '../database/db';
 import { TodoItem } from '../components/TodoItem';
 import { useTheme } from '../theme/useTheme';
 
@@ -28,6 +28,7 @@ export const TodoScreen = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [activeType, setActiveType] = useState<string>('daily');
   const [inputText, setInputText] = useState('');
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const isFocused = useIsFocused();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -48,11 +49,27 @@ export const TodoScreen = () => {
   }, [isFocused, loadTodos]);
 
   const handleAddTodo = async () => {
-    if (inputText.trim()) {
-      await addTodo(inputText.trim(), activeType);
+    const text = inputText.trim();
+    if (text) {
+      if (editingTodo?.id) {
+        await updateTodo(editingTodo.id, text);
+      } else {
+        await addTodo(text, activeType);
+      }
       setInputText('');
+      setEditingTodo(null);
       loadTodos();
     }
+  };
+
+  const handleEditTodo = (todo: Todo) => {
+    setEditingTodo(todo);
+    setInputText(todo.text);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTodo(null);
+    setInputText('');
   };
 
   const handleToggleTodo = async (todo: Todo) => {
@@ -68,7 +85,12 @@ export const TodoScreen = () => {
   const remaining = todos.filter((t) => t.is_completed === 0).length;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
+    >
+      <View style={styles.content}>
       <View style={styles.headerSection}>
         <Text style={[styles.kicker, { color: theme.textSecondary }]}>Stay on track</Text>
         <Text style={[styles.title, { color: theme.text }]}>Checklists</Text>
@@ -103,17 +125,20 @@ export const TodoScreen = () => {
       </View>
 
       <FlatList
+        style={styles.list}
         data={todos}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <TodoItem
             todo={item}
             onToggle={() => handleToggleTodo(item)}
+            onEdit={() => handleEditTodo(item)}
             onDelete={() => handleDeleteTodo(item.id!)}
           />
         )}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <View style={[styles.emptyIcon, { backgroundColor: theme.primarySoft }]}>
@@ -127,44 +152,50 @@ export const TodoScreen = () => {
         }
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
+      </View>
+
+      <View
+        style={[
+          styles.inputContainer,
+          {
+            backgroundColor: theme.surface,
+            borderTopColor: theme.border,
+            paddingBottom: 12 + insets.bottom,
+          },
+        ]}
       >
-        <View
-          style={[
-            styles.inputContainer,
-            {
-              backgroundColor: theme.surface,
-              borderTopColor: theme.border,
-              paddingBottom: 12 + insets.bottom,
-            },
-          ]}
-        >
           <TextInput
             style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.border }]}
-            placeholder={`Add a ${activeType} task`}
+            placeholder={editingTodo ? 'Edit task' : `Add a ${activeType} task`}
             placeholderTextColor={theme.textSecondary}
             value={inputText}
             onChangeText={setInputText}
             onSubmitEditing={handleAddTodo}
             returnKeyType="done"
+            autoFocus={editingTodo !== null}
           />
+          {editingTodo && (
+            <TouchableOpacity onPress={handleCancelEdit} hitSlop={8} style={styles.cancelButton}>
+              <MaterialIcons name="close" size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={[styles.addButton, { backgroundColor: theme.primary, opacity: inputText.trim() ? 1 : 0.5 }]}
             onPress={handleAddTodo}
             disabled={!inputText.trim()}
           >
-            <MaterialIcons name="arrow-upward" size={22} color="#FFF" />
+            <MaterialIcons name={editingTodo ? 'check' : 'arrow-upward'} size={22} color="#FFF" />
           </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </View>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
   headerSection: {
@@ -203,6 +234,9 @@ const styles = StyleSheet.create({
   filterText: {
     fontWeight: '700',
     fontSize: 13,
+  },
+  list: {
+    flex: 1,
   },
   listContent: {
     paddingHorizontal: 16,
@@ -244,6 +278,10 @@ const styles = StyleSheet.create({
     marginRight: 10,
     fontSize: 16,
     borderWidth: 1,
+  },
+  cancelButton: {
+    padding: 8,
+    marginRight: 2,
   },
   addButton: {
     width: 48,
