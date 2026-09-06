@@ -2,6 +2,21 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { MOTIVATIONAL_QUOTES } from './quotes';
 
+const MORNING_MESSAGES = [
+  "Hey Pritam! 🌅 What are we building today? Let's make it count.",
+  "Good morning, Pritam! 🚀 What's the one thing you'll finish today?",
+  "Rise and build, Pritam! 💪 What's your plan for today?",
+  "Morning, Pritam! ☀️ What are we completing today? Time is ticking.",
+  "Hey! 🎯 Today won't repeat itself. What are you working on?",
+  "Good morning! 🔥 What's today's mission, Pritam?",
+  "Pritam, the day is yours! 🌄 What will you accomplish today?",
+  "Morning check-in! 📋 What's the task you're not going to skip today?",
+  "Hey Pritam! ⚡ What's on the agenda? Make today matter.",
+  "New day, new chance! 🌞 What's your focus today, Pritam?",
+  "Wake up, Pritam! How are you planning to improve 1% today? 💡",
+  "If you don't have any purpose of waking up, then what's the point of waking up? 🌅 Let's set a goal for today pritam.",
+];
+
 const createDateTrigger = (date: Date) => {
   if (Platform.OS === 'android') {
     return {
@@ -46,6 +61,7 @@ export const setupNotifications = async () => {
   // Schedule motivation on startup
   try {
     await scheduleMotivationalNotifications();
+    await scheduleMorningProductivityNotification();
   } catch (error) {
     console.error('Error in setupNotifications:', error);
   }
@@ -96,6 +112,43 @@ export const scheduleMotivationalNotifications = async () => {
     }
   } catch (error) {
     console.error('Error scheduling motivational notifications:', error);
+  }
+};
+
+export const scheduleMorningProductivityNotification = async () => {
+  try {
+    // Cancel any existing morning productivity notifications
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    if (scheduled && Array.isArray(scheduled)) {
+      for (const notification of scheduled) {
+        if (notification.identifier && notification.identifier.startsWith('morning-productivity-')) {
+          await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+        }
+      }
+    }
+
+    // Schedule for the next 7 days at 8:00 AM
+    for (let day = 0; day < 7; day++) {
+      const scheduledDate = new Date();
+      scheduledDate.setDate(scheduledDate.getDate() + day);
+      scheduledDate.setHours(8, 0, 0, 0);
+
+      // Skip if the time has already passed today
+      if (scheduledDate < new Date()) continue;
+
+      const message = MORNING_MESSAGES[day % MORNING_MESSAGES.length];
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '⏰ Morning Check-in',
+          body: message,
+        },
+        trigger: createDateTrigger(scheduledDate),
+        identifier: `morning-productivity-${day}`,
+      });
+    }
+  } catch (error) {
+    console.error('Error scheduling morning productivity notification:', error);
   }
 };
 
