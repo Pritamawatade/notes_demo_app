@@ -17,7 +17,7 @@ const MORNING_MESSAGES = [
   "If you don't have any purpose of waking up, then what's the point of waking up? 🌅 Let's set a goal for today pritam.",
 ];
 
-const createDateTrigger = (date: Date) => {
+const createDateTrigger = (date: Date): Notifications.DateTriggerInput => {
   if (Platform.OS === 'android') {
     return {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -26,13 +26,17 @@ const createDateTrigger = (date: Date) => {
     };
   }
 
-  return date;
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.DATE,
+    date,
+  };
 };
 
 export const setupNotifications = async () => {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
       shouldPlaySound: true,
       shouldSetBadge: false,
     }),
