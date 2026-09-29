@@ -4,7 +4,7 @@ import { MOTIVATIONAL_QUOTES } from './quotes';
 
 const MORNING_MESSAGES = [
   "Hey Pritam! 🌅 What are we building today? Let's make it count.",
-  "Good morning, Pritam! 🚀 What's the one thing you'll finish today?",
+  "Good morning, Pritam!  What's the one thing you'll finish today?",
   "Rise and build, Pritam! 💪 What's your plan for today?",
   "Morning, Pritam! ☀️ What are we completing today? Time is ticking.",
   "Hey! 🎯 Today won't repeat itself. What are you working on?",
@@ -102,7 +102,7 @@ export const scheduleMotivationalNotifications = async () => {
 
         await Notifications.scheduleNotificationAsync({
           content: {
-            title: 'Daily Motivation 🚀',
+            title: 'Daily Reminder',
             body: randomQuote,
           },
           trigger: createDateTrigger(scheduledDate),
