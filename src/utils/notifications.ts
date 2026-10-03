@@ -1,21 +1,54 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { MOTIVATIONAL_QUOTES } from './quotes';
+import { MOTIVATIONAL_QUOTES, mergeQuotes } from './quotes';
+import { getCustomQuotes, getProfile } from '../database/db';
 
-const MORNING_MESSAGES = [
-  "Hey Pritam! 🌅 What are we building today? Let's make it count.",
-  "Good morning, Pritam!  What's the one thing you'll finish today?",
-  "Rise and build, Pritam! 💪 What's your plan for today?",
-  "Morning, Pritam! ☀️ What are we completing today? Time is ticking.",
-  "Hey! 🎯 Today won't repeat itself. What are you working on?",
-  "Good morning! 🔥 What's today's mission, Pritam?",
-  "Pritam, the day is yours! 🌄 What will you accomplish today?",
-  "Morning check-in! 📋 What's the task you're not going to skip today?",
-  "Hey Pritam! ⚡ What's on the agenda? Make today matter.",
-  "New day, new chance! 🌞 What's your focus today, Pritam?",
-  "Wake up, Pritam! How are you planning to improve 1% today? 💡",
-  "If you don't have any purpose of waking up, then what's the point of waking up? 🌅 Let's set a goal for today pritam.",
-];
+export const buildMorningMessages = (firstName: string): string[] => {
+  const name = firstName.trim();
+  const hey = name ? `Hey ${name}!` : 'Hey!';
+  const morning = name ? `Good morning, ${name}!` : 'Good morning!';
+  const rise = name ? `Rise and build, ${name}! 💪` : 'Rise and build! 💪';
+  const genericMorning = name ? `Morning, ${name}! ☀️` : 'Morning! ☀️';
+
+  return [
+    `${hey} 🌅 What are we building today? Let's make it count.`,
+    `${morning}  What's the one thing you'll finish today?`,
+    `${rise} What's your plan for today?`,
+    `${genericMorning} What are we completing today? Time is ticking.`,
+    `Hey! 🎯 Today won't repeat itself. What are you working on?`,
+    `Good morning! 🔥 What's today's mission${name ? `, ${name}` : ''}?`,
+    name ? `${name}, the day is yours! 🌄 What will you accomplish today?` : `The day is yours! 🌄 What will you accomplish today?`,
+    `Morning check-in! 📋 What's the task you're not going to skip today?`,
+    `${hey} ⚡ What's on the agenda? Make today matter.`,
+    `New day, new chance! 🌞 What's your focus today${name ? `, ${name}` : ''}?`,
+    name ? `Wake up, ${name}! How are you planning to improve 1% today? 💡` : `Wake up! How are you planning to improve 1% today? 💡`,
+    name
+      ? `If you don't have any purpose of waking up, then what's the point of waking up? 🌅 Let's set a goal for today ${name.toLowerCase()}.`
+      : `If you don't have any purpose of waking up, then what's the point of waking up? 🌅 Let's set a goal for today.`,
+  ];
+};
+
+// Backwards-compatible export (defaults to no name)
+export const MORNING_MESSAGES = buildMorningMessages('');
+
+export const getNotificationDisplayName = async (): Promise<{ firstName: string; fullName: string }> => {
+  try {
+    const profile = await getProfile();
+    const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
+    return { firstName: profile.first_name.trim(), fullName };
+  } catch {
+    return { firstName: '', fullName: '' };
+  }
+};
+
+export const getQuotePool = async (): Promise<string[]> => {
+  try {
+    const custom = await getCustomQuotes();
+    return mergeQuotes(custom.map((q) => q.text));
+  } catch {
+    return [...MOTIVATIONAL_QUOTES];
+  }
+};
 
 const createDateTrigger = (date: Date): Notifications.DateTriggerInput => {
   if (Platform.OS === 'android') {
@@ -73,7 +106,7 @@ export const setupNotifications = async () => {
   return true;
 };
 
-export const scheduleMotivationalNotifications = async () => {
+export const scheduleMotivationalNotifications = async (quotePool?: string[]) => {
   try {
     // Clear existing motivational notifications to avoid duplicates/stale ones
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
@@ -85,8 +118,10 @@ export const scheduleMotivationalNotifications = async () => {
       }
     }
 
+    const quotes = quotePool && quotePool.length > 0 ? quotePool : await getQuotePool();
+
     const times = [
-      { hour: 9, minute: 0 },  // Morning
+      { hour: 9, minute: 0 }, // Morning
       { hour: 14, minute: 0 }, // Afternoon
       { hour: 20, minute: 0 }, // Night
     ];
@@ -102,7 +137,7 @@ export const scheduleMotivationalNotifications = async () => {
         // Don't schedule if the time has already passed for today
         if (scheduledDate < new Date()) continue;
 
-        const randomQuote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
+        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
 
         await Notifications.scheduleNotificationAsync({
           content: {
@@ -119,7 +154,7 @@ export const scheduleMotivationalNotifications = async () => {
   }
 };
 
-export const scheduleMorningProductivityNotification = async () => {
+export const scheduleMorningProductivityNotification = async (firstNameOverride?: string) => {
   try {
     // Cancel any existing morning productivity notifications
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
@@ -131,6 +166,17 @@ export const scheduleMorningProductivityNotification = async () => {
       }
     }
 
+    let firstName = (firstNameOverride ?? '').trim();
+    if (firstNameOverride === undefined) {
+      try {
+        const { firstName: stored } = await getNotificationDisplayName();
+        firstName = stored;
+      } catch {
+        firstName = '';
+      }
+    }
+    const messages = buildMorningMessages(firstName);
+
     // Schedule for the next 7 days at 8:00 AM
     for (let day = 0; day < 7; day++) {
       const scheduledDate = new Date();
@@ -140,7 +186,7 @@ export const scheduleMorningProductivityNotification = async () => {
       // Skip if the time has already passed today
       if (scheduledDate < new Date()) continue;
 
-      const message = MORNING_MESSAGES[day % MORNING_MESSAGES.length];
+      const message = messages[day % messages.length];
 
       await Notifications.scheduleNotificationAsync({
         content: {
