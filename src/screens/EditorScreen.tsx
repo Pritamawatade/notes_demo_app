@@ -91,6 +91,8 @@ export const EditorScreen = () => {
               styles.headerButton,
               { backgroundColor: reminderTime ? theme.primarySoft : theme.surfaceMuted },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={reminderTime ? 'Change reminder' : 'Set reminder'}
           >
             <MaterialIcons
               name={reminderTime ? 'alarm-on' : 'alarm-add'}
@@ -104,6 +106,8 @@ export const EditorScreen = () => {
               styles.headerButton,
               { backgroundColor: isPreview ? theme.primarySoft : theme.surfaceMuted },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={isPreview ? 'Back to editing' : 'Preview note'}
           >
             <MaterialIcons
               name={isPreview ? 'edit' : 'visibility'}
@@ -115,15 +119,19 @@ export const EditorScreen = () => {
             <TouchableOpacity
               onPress={handleDelete}
               style={[styles.headerButton, { backgroundColor: theme.danger + '18' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Delete note"
             >
               <MaterialIcons name="delete-outline" size={20} color={theme.danger} />
             </TouchableOpacity>
           )}
           <TouchableOpacity
             onPress={handleSave}
-            style={[styles.saveButton, { backgroundColor: theme.primary }]}
+            style={[styles.saveButton, { backgroundColor: theme.accent }]}
+            accessibilityRole="button"
+            accessibilityLabel="Save note"
           >
-            <MaterialIcons name="check" size={22} color="#FFF" />
+            <MaterialIcons name="check" size={22} color={theme.onAccent} />
           </TouchableOpacity>
         </View>
       ),
@@ -221,17 +229,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
   },
   saveButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     marginLeft: 8,
     alignItems: 'center',
     justifyContent: 'center',

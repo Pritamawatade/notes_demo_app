@@ -10,8 +10,8 @@ interface NoteCardProps {
   width: number;
 }
 
-const PAPER_TINTS_LIGHT = ['#FFFFFF', '#FFF4E8', '#FFE9D2', '#FFF8F0'];
-const PAPER_TINTS_DARK = ['#2A1E16', '#322418', '#3A281A', '#271C14'];
+const PAPER_TINTS_LIGHT = ['#FFFFFF', '#F1FAF6', '#E6F3ED', '#FFFFFF'];
+const PAPER_TINTS_DARK = ['#162825', '#182D29', '#142420', '#1A2E29'];
 
 export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, width }) => {
   const { theme, isDark } = useTheme();
@@ -26,11 +26,12 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, width }) => {
           width,
           backgroundColor: paper,
           borderColor: theme.border,
-          shadowColor: theme.cardShadow,
         },
       ]}
       onPress={onPress}
-      activeOpacity={0.85}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={`Open note: ${note.title || 'Untitled'}`}
     >
       <View style={[styles.accent, { backgroundColor: theme.primary }]} />
       <View style={styles.body}>
@@ -39,7 +40,10 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, width }) => {
             {note.title || 'Untitled'}
           </Text>
           {note.is_pinned === 1 && (
-            <View style={[styles.pinBadge, { backgroundColor: theme.pinned + '28' }]}>
+            <View
+              style={[styles.pinBadge, { backgroundColor: theme.pinned + '22' }]}
+              accessibilityLabel="Pinned"
+            >
               <MaterialIcons name="push-pin" size={13} color={theme.pinned} />
             </View>
           )}
@@ -55,7 +59,10 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, width }) => {
             })}
           </Text>
           {note.reminder_time ? (
-            <View style={[styles.alarmChip, { backgroundColor: theme.primarySoft }]}>
+            <View
+              style={[styles.alarmChip, { backgroundColor: theme.primarySoft }]}
+              accessibilityLabel="Has reminder"
+            >
               <MaterialIcons name="alarm" size={12} color={theme.primary} />
             </View>
           ) : null}
@@ -72,13 +79,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
     flexDirection: 'row',
-    elevation: 3,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
   },
   accent: {
-    width: 5,
+    width: 4,
   },
   body: {
     flex: 1,
@@ -97,7 +100,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: -0.3,
-    lineHeight: 21,
+    lineHeight: 22,
   },
   pinBadge: {
     padding: 4,
@@ -106,8 +109,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 20,
     marginBottom: 12,
   },
   footer: {
@@ -116,14 +119,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   date: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     letterSpacing: 0.2,
   },
   alarmChip: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
