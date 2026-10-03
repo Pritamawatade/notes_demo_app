@@ -48,7 +48,7 @@ const MainTabs = () => {
       })}
     >
       <Tab.Screen name="Notes" component={HomeScreen} />
-      <Tab.Screen name="Todos" component={TodoScreen} options={{ title: 'Task' }} />
+      <Tab.Screen name="Todos" component={TodoScreen} options={{ title: 'Tasks' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

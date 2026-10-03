@@ -83,6 +83,12 @@ export const TodoScreen = () => {
   };
 
   const remaining = todos.filter((t) => t.is_completed === 0).length;
+  const progressLine =
+    todos.length === 0
+      ? 'Nothing here yet'
+      : remaining === 0
+        ? `All ${todos.length} done — nice work`
+        : `${remaining} of ${todos.length} still open`;
 
   return (
     <KeyboardAvoidingView
@@ -95,7 +101,7 @@ export const TodoScreen = () => {
         <Text style={[styles.kicker, { color: theme.textSecondary }]}>Stay on track</Text>
         <Text style={[styles.title, { color: theme.text }]}>Checklists</Text>
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          {remaining} open · {todos.length} total
+          {progressLine}
         </Text>
       </View>
 
@@ -115,7 +121,7 @@ export const TodoScreen = () => {
                 ]}
                 onPress={() => setActiveType(type.value)}
               >
-                <Text style={[styles.filterText, { color: active ? '#FFF' : theme.textSecondary }]}>
+                <Text style={[styles.filterText, { color: active ? theme.onPrimary : theme.textSecondary }]}>
                   {type.label}
                 </Text>
               </TouchableOpacity>
@@ -180,11 +186,13 @@ export const TodoScreen = () => {
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: theme.primary, opacity: inputText.trim() ? 1 : 0.5 }]}
+            style={[styles.addButton, { backgroundColor: theme.accent, opacity: inputText.trim() ? 1 : 0.5 }]}
             onPress={handleAddTodo}
             disabled={!inputText.trim()}
+            accessibilityRole="button"
+            accessibilityLabel={editingTodo ? 'Save edited task' : 'Add task'}
           >
-            <MaterialIcons name={editingTodo ? 'check' : 'arrow-upward'} size={22} color="#FFF" />
+            <MaterialIcons name={editingTodo ? 'check' : 'arrow-upward'} size={22} color={theme.onAccent} />
           </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -225,8 +233,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   filterChip: {
-    paddingHorizontal: 18,
-    paddingVertical: 9,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderRadius: 999,
     marginRight: 8,
     borderWidth: 1,

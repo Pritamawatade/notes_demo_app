@@ -168,8 +168,8 @@ export const ProfileScreen = () => {
 
         {/* Identity card */}
         <View style={[styles.identityCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-            <Text style={styles.avatarText}>{getInitials(firstName, lastName)}</Text>
+          <View style={[styles.avatar, { backgroundColor: theme.accent }]}>
+            <Text style={[styles.avatarText, { color: theme.onAccent }]}>{getInitials(firstName, lastName)}</Text>
           </View>
           <View style={styles.identityText}>
             <Text style={[styles.identityName, { color: theme.text }]} numberOfLines={1}>
@@ -233,7 +233,7 @@ export const ProfileScreen = () => {
           <View style={[styles.preview, { backgroundColor: theme.background, borderColor: theme.border }]}>
             <View style={styles.previewTop}>
               <MaterialIcons name="wb-sunny" size={14} color={theme.primary} />
-              <Text style={[styles.previewApp, { color: theme.textSecondary }]}>NOTEDOWN · now</Text>
+              <Text style={[styles.previewApp, { color: theme.textSecondary }]}>Preview</Text>
             </View>
             <Text style={[styles.previewTitle, { color: theme.text }]}>⏰ Morning Check-in</Text>
             <Text style={[styles.previewBody, { color: theme.textSecondary }]}>{previewMessage}</Text>
@@ -242,14 +242,16 @@ export const ProfileScreen = () => {
           <TouchableOpacity
             style={[
               styles.saveButton,
-              { backgroundColor: theme.primary, opacity: !isDirty || saving || loading ? 0.5 : 1 },
+              { backgroundColor: theme.accent, opacity: !isDirty || saving || loading ? 0.5 : 1 },
             ]}
             onPress={handleSaveName}
             disabled={!isDirty || saving || loading}
             activeOpacity={0.9}
+            accessibilityRole="button"
+            accessibilityLabel="Save name"
           >
-            <MaterialIcons name="check" size={20} color="#FFF" />
-            <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save name'}</Text>
+            <MaterialIcons name="check" size={20} color={theme.onAccent} />
+            <Text style={[styles.saveButtonText, { color: theme.onAccent }]}>{saving ? 'Saving…' : 'Save name'}</Text>
           </TouchableOpacity>
           {saveMessage && (
             <View style={[styles.savedNote, { backgroundColor: theme.primarySoft }]}>
@@ -291,7 +293,7 @@ export const ProfileScreen = () => {
           <View style={[styles.preview, { backgroundColor: theme.background, borderColor: theme.border }]}>
             <View style={styles.previewTop}>
               <MaterialIcons name="today" size={14} color={theme.primary} />
-              <Text style={[styles.previewApp, { color: theme.textSecondary }]}>TODAY'S QUOTE</Text>
+              <Text style={[styles.previewApp, { color: theme.textSecondary }]}>Today's quote</Text>
             </View>
             <Text style={[styles.previewBody, { color: theme.text }]}>“{todaysQuote}”</Text>
           </View>
@@ -313,14 +315,16 @@ export const ProfileScreen = () => {
               <TouchableOpacity
                 style={[
                   styles.addButton,
-                  { backgroundColor: theme.primary, opacity: newQuote.trim() && !addingQuote ? 1 : 0.5 },
+                  { backgroundColor: theme.accent, opacity: newQuote.trim() && !addingQuote ? 1 : 0.5 },
                 ]}
                 onPress={handleAddQuote}
                 disabled={!newQuote.trim() || addingQuote}
                 activeOpacity={0.9}
+                accessibilityRole="button"
+                accessibilityLabel="Add quote"
               >
-                <MaterialIcons name="add" size={20} color="#FFF" />
-                <Text style={styles.addButtonText}>{addingQuote ? 'Adding…' : 'Add quote'}</Text>
+                <MaterialIcons name="add" size={20} color={theme.onAccent} />
+                <Text style={[styles.addButtonText, { color: theme.onAccent }]}>{addingQuote ? 'Adding…' : 'Add quote'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -347,7 +351,13 @@ export const ProfileScreen = () => {
                     <MaterialIcons name="format-quote" size={16} color={theme.primary} />
                   </View>
                   <Text style={[styles.quoteText, { color: theme.text }]}>{q.text}</Text>
-                  <TouchableOpacity onPress={() => handleDeleteQuote(q)} hitSlop={10} style={styles.deleteBtn}>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteQuote(q)}
+                    hitSlop={10}
+                    style={styles.deleteBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Delete quote: ${q.text.slice(0, 40)}`}
+                  >
                     <MaterialIcons name="delete-outline" size={20} color={theme.danger} />
                   </TouchableOpacity>
                 </View>
@@ -383,7 +393,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: '#FFF', fontSize: 20, fontWeight: '800' },
+  avatarText: { fontSize: 20, fontWeight: '800' },
   identityText: { flex: 1 },
   identityName: { fontSize: 18, fontWeight: '800' },
   identitySub: { fontSize: 12, fontWeight: '500', marginTop: 2 },
@@ -425,7 +435,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginTop: 12,
   },
-  saveButtonText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
+  saveButtonText: { fontSize: 15, fontWeight: '800' },
   savedNote: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -455,7 +465,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
   },
-  addButtonText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
+  addButtonText: { fontSize: 14, fontWeight: '800' },
   emptyQuotes: { alignItems: 'center', paddingVertical: 20, paddingHorizontal: 12 },
   emptyIcon: {
     width: 60,
@@ -484,5 +494,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   quoteText: { flex: 1, fontSize: 13, fontWeight: '500', lineHeight: 19 },
-  deleteBtn: { padding: 2 },
+  deleteBtn: { padding: 10, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
 });

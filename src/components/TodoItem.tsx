@@ -26,7 +26,15 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onEdit, onDe
         },
       ]}
     >
-      <TouchableOpacity style={styles.checkbox} onPress={onToggle} activeOpacity={0.7}>
+      <TouchableOpacity
+        style={styles.checkbox}
+        onPress={onToggle}
+        activeOpacity={0.7}
+        hitSlop={10}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: done }}
+        accessibilityLabel={done ? `Mark ${todo.text} as not done` : `Mark ${todo.text} as done`}
+      >
         <MaterialIcons
           name={done ? 'check-circle' : 'radio-button-unchecked'}
           size={26}
@@ -46,11 +54,23 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onEdit, onDe
         {todo.text}
       </Text>
 
-      <TouchableOpacity onPress={onEdit} hitSlop={8} style={styles.actionBtn}>
+      <TouchableOpacity
+        onPress={onEdit}
+        hitSlop={10}
+        style={styles.actionBtn}
+        accessibilityRole="button"
+        accessibilityLabel={`Edit ${todo.text}`}
+      >
         <MaterialIcons name="edit" size={18} color={theme.textSecondary} />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onDelete} hitSlop={8} style={styles.actionBtn}>
+      <TouchableOpacity
+        onPress={onDelete}
+        hitSlop={10}
+        style={styles.actionBtn}
+        accessibilityRole="button"
+        accessibilityLabel={`Delete ${todo.text}`}
+      >
         <MaterialIcons name="close" size={18} color={theme.textSecondary} />
       </TouchableOpacity>
     </View>
@@ -61,23 +81,32 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     borderRadius: 16,
-    marginBottom: 10,
+    marginBottom: 8,
     borderWidth: 1,
   },
   checkbox: {
-    marginRight: 12,
+    marginRight: 8,
+    padding: 4,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   text: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     lineHeight: 22,
   },
   actionBtn: {
-    padding: 4,
-    marginLeft: 8,
+    padding: 10,
+    marginLeft: 2,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
