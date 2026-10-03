@@ -54,9 +54,21 @@ export const MOTIVATIONAL_QUOTES = [
   "Setting goals is the first step in turning the invisible into the visible."
 ];
 
-export const getDailyQuote = (): string => {
+export const getDailyQuote = (allQuotes?: string[]): string => {
+  const pool = allQuotes && allQuotes.length > 0 ? allQuotes : MOTIVATIONAL_QUOTES;
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const dayIndex = Math.floor(start.getTime() / 86400000);
-  return MOTIVATIONAL_QUOTES[Math.abs(dayIndex) % MOTIVATIONAL_QUOTES.length];
+  return pool[Math.abs(dayIndex) % pool.length];
+};
+
+export const mergeQuotes = (customQuotes: string[]): string[] => {
+  const seen = new Set(MOTIVATIONAL_QUOTES.map((q) => q.toLowerCase()));
+  const uniqueCustom = customQuotes.filter((q) => {
+    const key = q.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return [...uniqueCustom, ...MOTIVATIONAL_QUOTES];
 };

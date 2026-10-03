@@ -12,10 +12,10 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Note, getNotes } from '../database/db';
+import { Note, getNotes, getProfile, getCustomQuotes } from '../database/db';
 import { NoteCard } from '../components/NoteCard';
 import { useTheme } from '../theme/useTheme';
-import { getDailyQuote } from '../utils/quotes';
+import { getDailyQuote, mergeQuotes } from '../utils/quotes';
 
 const H_PAD = 16;
 const GAP = 12;
@@ -23,12 +23,14 @@ const GAP = 12;
 export const HomeScreen = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [quotePool, setQuotePool] = useState<string[] | undefined>(undefined);
   const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
   const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const quote = useMemo(() => getDailyQuote(), []);
+  const quote = useMemo(() => getDailyQuote(quotePool), [quotePool]);
 
   const cardWidth = (width - H_PAD * 2 - GAP) / 2;
 
@@ -41,11 +43,22 @@ export const HomeScreen = () => {
     }
   }, [searchQuery]);
 
+  const loadPersonalization = useCallback(async () => {
+    try {
+      const [profile, custom] = await Promise.all([getProfile(), getCustomQuotes()]);
+      setFirstName(profile.first_name.trim());
+      setQuotePool(mergeQuotes(custom.map((q) => q.text)));
+    } catch (e) {
+      console.warn(e);
+    }
+  }, []);
+
   useEffect(() => {
     if (isFocused) {
       loadNotes();
+      loadPersonalization();
     }
-  }, [isFocused, loadNotes]);
+  }, [isFocused, loadNotes, loadPersonalization]);
 
   const todayLabel = new Date().toLocaleDateString(undefined, {
     weekday: 'long',
@@ -62,6 +75,9 @@ export const HomeScreen = () => {
           <View style={{ flex: 1 }}>
             <Text style={[styles.greeting, { color: theme.textSecondary }]}>{todayLabel}</Text>
             <Text style={[styles.appName, { color: theme.text }]}>NoteDown</Text>
+            {firstName ? (
+              <Text style={[styles.hello, { color: theme.primary }]}>Hello, {firstName} 👋</Text>
+            ) : null}
           </View>
           <View style={[styles.countBadge, { backgroundColor: theme.primarySoft }]}>
             <Text style={[styles.countText, { color: theme.primary }]}>
@@ -173,6 +189,11 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '800',
     letterSpacing: -0.8,
+  },
+  hello: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 2,
   },
   countBadge: {
     paddingHorizontal: 12,

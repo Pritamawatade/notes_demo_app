@@ -18,6 +18,18 @@ export interface Todo {
   created_at: string;
 }
 
+export interface UserProfile {
+  first_name: string;
+  last_name: string;
+  updated_at: string;
+}
+
+export interface CustomQuote {
+  id?: number;
+  text: string;
+  created_at: string;
+}
+
 let db: SQLite.SQLiteDatabase;
 
 export const initDatabase = async () => {
@@ -39,6 +51,17 @@ export const initDatabase = async () => {
       text TEXT NOT NULL,
       is_completed INTEGER DEFAULT 0,
       type TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS profile (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      first_name TEXT NOT NULL DEFAULT '',
+      last_name TEXT NOT NULL DEFAULT '',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS custom_quotes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      text TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -112,4 +135,50 @@ export const toggleTodo = async (id: number, currentStatus: number): Promise<voi
 
 export const deleteTodo = async (id: number): Promise<void> => {
   await db.runAsync('DELETE FROM todos WHERE id = ?', [id]);
+};
+
+// ---- Profile (single row, id = 1) ----
+
+export const getProfile = async (): Promise<UserProfile> => {
+  const row = await db.getFirstAsync<{ first_name: string; last_name: string; updated_at: string }>(
+    'SELECT first_name, last_name, updated_at FROM profile WHERE id = 1'
+  );
+  if (!row) {
+    return { first_name: '', last_name: '', updated_at: new Date().toISOString() };
+  }
+  return row;
+};
+
+export const saveProfile = async (firstName: string, lastName: string): Promise<void> => {
+  await db.runAsync(
+    `INSERT INTO profile (id, first_name, last_name, updated_at)
+     VALUES (1, ?, ?, DATETIME("now"))
+     ON CONFLICT(id) DO UPDATE SET first_name = excluded.first_name, last_name = excluded.last_name, updated_at = DATETIME("now")`,
+    [firstName.trim(), lastName.trim()]
+  );
+};
+
+export const getDisplayName = async (): Promise<string> => {
+  const profile = await getProfile();
+  return [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
+};
+
+// ---- Custom motivational quotes ----
+
+export const getCustomQuotes = async (): Promise<CustomQuote[]> => {
+  return await db.getAllAsync<CustomQuote>('SELECT * FROM custom_quotes ORDER BY created_at DESC');
+};
+
+export const addCustomQuote = async (text: string): Promise<number> => {
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error('Quote text cannot be empty');
+  const result = await db.runAsync(
+    'INSERT INTO custom_quotes (text, created_at) VALUES (?, DATETIME("now"))',
+    [trimmed]
+  );
+  return result.lastInsertRowId;
+};
+
+export const deleteCustomQuote = async (id: number): Promise<void> => {
+  await db.runAsync('DELETE FROM custom_quotes WHERE id = ?', [id]);
 };

@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { EditorScreen } from './src/screens/EditorScreen';
 import { TodoScreen } from './src/screens/TodoScreen';
+import { ProfileScreen } from './src/screens/ProfileScreen';
 import { initDatabase } from './src/database/db';
 import { useTheme } from './src/theme/useTheme';
 import { setupNotifications } from './src/utils/notifications';
@@ -24,14 +25,10 @@ const MainTabs = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ color, size, focused }) => {
-          const iconName =
-            route.name === 'Notes'
-              ? focused
-                ? 'edit-note'
-                : 'notes'
-              : focused
-                ? 'check-circle'
-                : 'check-circle-outline';
+          let iconName: any = 'notes';
+          if (route.name === 'Notes') iconName = focused ? 'edit-note' : 'notes';
+          else if (route.name === 'Todos') iconName = focused ? 'check-circle' : 'check-circle-outline';
+          else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
           return <MaterialIcons name={iconName as any} size={size + 2} color={color} />;
         },
         tabBarActiveTintColor: theme.primary,
@@ -52,6 +49,7 @@ const MainTabs = () => {
     >
       <Tab.Screen name="Notes" component={HomeScreen} />
       <Tab.Screen name="Todos" component={TodoScreen} options={{ title: 'Task' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };
