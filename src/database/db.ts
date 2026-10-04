@@ -182,3 +182,9 @@ export const addCustomQuote = async (text: string): Promise<number> => {
 export const deleteCustomQuote = async (id: number): Promise<void> => {
   await db.runAsync('DELETE FROM custom_quotes WHERE id = ?', [id]);
 };
+
+export const updateCustomQuote = async (id: number, text: string): Promise<void> => {
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error('Quote text cannot be empty');
+  await db.runAsync('UPDATE custom_quotes SET text = ? WHERE id = ?', [trimmed, id]);
+};

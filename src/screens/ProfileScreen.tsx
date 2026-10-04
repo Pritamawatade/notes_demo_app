@@ -19,6 +19,7 @@ import {
   getCustomQuotes,
   addCustomQuote,
   deleteCustomQuote,
+  updateCustomQuote,
   CustomQuote,
 } from '../database/db';
 import { MOTIVATIONAL_QUOTES, getDailyQuote, mergeQuotes } from '../utils/quotes';
@@ -52,6 +53,7 @@ export const ProfileScreen = () => {
   const [quotes, setQuotes] = useState<CustomQuote[]>([]);
   const [newQuote, setNewQuote] = useState('');
   const [addingQuote, setAddingQuote] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [testingMorning, setTestingMorning] = useState(false);
   const [testingQuote, setTestingQuote] = useState(false);
@@ -118,7 +120,12 @@ export const ProfileScreen = () => {
     }
     setAddingQuote(true);
     try {
-      await addCustomQuote(text);
+      if (editingId !== null) {
+        await updateCustomQuote(editingId, text);
+        setEditingId(null);
+      } else {
+        await addCustomQuote(text);
+      }
       setNewQuote('');
       const updated = await getCustomQuotes();
       setQuotes(updated);
@@ -126,10 +133,20 @@ export const ProfileScreen = () => {
       setSaveMessage(null);
     } catch (e) {
       console.warn(e);
-      Alert.alert('Could not add quote', 'Please try again.');
+      Alert.alert(editingId !== null ? 'Could not save quote' : 'Could not add quote', 'Please try again.');
     } finally {
       setAddingQuote(false);
     }
+  };
+
+  const handleStartEditQuote = (quote: CustomQuote) => {
+    setEditingId(quote.id!);
+    setNewQuote(quote.text);
+  };
+
+  const handleCancelEditQuote = () => {
+    setEditingId(null);
+    setNewQuote('');
   };
 
   const handleDeleteQuote = (quote: CustomQuote) => {
@@ -141,6 +158,10 @@ export const ProfileScreen = () => {
         onPress: async () => {
           try {
             await deleteCustomQuote(quote.id!);
+            if (editingId === quote.id) {
+              setEditingId(null);
+              setNewQuote('');
+            }
             const updated = await getCustomQuotes();
             setQuotes(updated);
             await scheduleMotivationalNotifications(mergeQuotes(updated.map((q) => q.text)));
@@ -366,7 +387,16 @@ export const ProfileScreen = () => {
             </Text>
           </TouchableOpacity>
 
-          <View style={[styles.quoteInputBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
+          <View style={[styles.quoteInputBox, { backgroundColor: theme.background, borderWidth: editingId !== null ? 2 : 1, borderColor: editingId !== null ? theme.primary : theme.border }]}>
+            {editingId !== null && (
+              <View style={styles.editingBanner}>
+                <MaterialIcons name="edit" size={14} color={theme.primary} />
+                <Text style={[styles.editingBannerText, { color: theme.primary }]}>Editing quote</Text>
+                <TouchableOpacity onPress={handleCancelEditQuote} hitSlop={10} accessibilityRole="button" accessibilityLabel="Cancel editing">
+                  <MaterialIcons name="close" size={18} color={theme.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            )}
             <TextInput
               style={[styles.quoteInput, { color: theme.text }]}
               placeholder="Write your own quote… e.g. Small steps every day beat big leaps once."
@@ -380,20 +410,36 @@ export const ProfileScreen = () => {
               <Text style={[styles.charCount, { color: theme.textSecondary }]}>
                 {newQuote.trim().length}/280
               </Text>
-              <TouchableOpacity
-                style={[
-                  styles.addButton,
-                  { backgroundColor: theme.accent, opacity: newQuote.trim() && !addingQuote ? 1 : 0.5 },
-                ]}
-                onPress={handleAddQuote}
-                disabled={!newQuote.trim() || addingQuote}
-                activeOpacity={0.9}
-                accessibilityRole="button"
-                accessibilityLabel="Add quote"
-              >
-                <MaterialIcons name="add" size={20} color={theme.onAccent} />
-                <Text style={[styles.addButtonText, { color: theme.onAccent }]}>{addingQuote ? 'Adding…' : 'Add quote'}</Text>
-              </TouchableOpacity>
+              <View style={styles.quoteActions}>
+                {editingId !== null && (
+                  <TouchableOpacity
+                    style={[styles.cancelButton, { borderColor: theme.border }]}
+                    onPress={handleCancelEditQuote}
+                    disabled={addingQuote}
+                    activeOpacity={0.9}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel editing"
+                  >
+                    <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={[
+                    styles.addButton,
+                    { backgroundColor: theme.accent, opacity: newQuote.trim() && !addingQuote ? 1 : 0.5 },
+                  ]}
+                  onPress={handleAddQuote}
+                  disabled={!newQuote.trim() || addingQuote}
+                  activeOpacity={0.9}
+                  accessibilityRole="button"
+                  accessibilityLabel={editingId !== null ? 'Save quote' : 'Add quote'}
+                >
+                  <MaterialIcons name={editingId !== null ? 'check' : 'add'} size={20} color={theme.onAccent} />
+                  <Text style={[styles.addButtonText, { color: theme.onAccent }]}>
+                    {addingQuote ? 'Saving…' : editingId !== null ? 'Save quote' : 'Add quote'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
@@ -419,15 +465,30 @@ export const ProfileScreen = () => {
                     <MaterialIcons name="format-quote" size={16} color={theme.primary} />
                   </View>
                   <Text style={[styles.quoteText, { color: theme.text }]}>{q.text}</Text>
-                  <TouchableOpacity
-                    onPress={() => handleDeleteQuote(q)}
-                    hitSlop={10}
-                    style={styles.deleteBtn}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Delete quote: ${q.text.slice(0, 40)}`}
-                  >
-                    <MaterialIcons name="delete-outline" size={20} color={theme.danger} />
-                  </TouchableOpacity>
+                  <View style={styles.quoteRowActions}>
+                    <TouchableOpacity
+                      onPress={() => handleStartEditQuote(q)}
+                      hitSlop={10}
+                      style={styles.iconBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Edit quote: ${q.text.slice(0, 40)}`}
+                    >
+                      <MaterialIcons
+                        name="edit"
+                        size={20}
+                        color={editingId === q.id ? theme.primary : theme.textSecondary}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleDeleteQuote(q)}
+                      hitSlop={10}
+                      style={styles.iconBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Delete quote: ${q.text.slice(0, 40)}`}
+                    >
+                      <MaterialIcons name="delete-outline" size={20} color={theme.danger} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ))}
             </View>
@@ -572,5 +633,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   quoteText: { flex: 1, fontSize: 13, fontWeight: '500', lineHeight: 19 },
+  quoteRowActions: { flexDirection: 'row', alignItems: 'center' },
+  iconBtn: { padding: 10, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   deleteBtn: { padding: 10, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  quoteActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cancelButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  cancelButtonText: { fontSize: 14, fontWeight: '800' },
+  editingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  editingBannerText: { flex: 1, fontSize: 12, fontWeight: '800' },
 });
