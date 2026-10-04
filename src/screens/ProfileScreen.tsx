@@ -22,7 +22,7 @@ import {
   updateCustomQuote,
   CustomQuote,
 } from '../database/db';
-import { MOTIVATIONAL_QUOTES, getDailyQuote, mergeQuotes } from '../utils/quotes';
+import { getDailyQuote, mergeQuotes } from '../utils/quotes';
 import {
   buildMorningMessages,
   scheduleMorningProductivityNotification,
@@ -95,19 +95,33 @@ export const ProfileScreen = () => {
   const todaysQuote = useMemo(() => getDailyQuote(quotePool), [quotePool]);
 
   const handleSaveName = async () => {
+    if (saving) return;
+    const trimmedFirst = firstName.trim();
+    const trimmedLast = lastName.trim();
+    if (trimmedFirst === savedFirst.trim() && trimmedLast === savedLast.trim()) return;
     setSaving(true);
     setSaveMessage(null);
     try {
-      await saveProfile(firstName, lastName);
-      setSavedFirst(firstName.trim());
-      setSavedLast(lastName.trim());
-      await scheduleMorningProductivityNotification(firstName.trim());
+      await saveProfile(trimmedFirst, trimmedLast);
+      setFirstName(trimmedFirst);
+      setLastName(trimmedLast);
+      setSavedFirst(trimmedFirst);
+      setSavedLast(trimmedLast);
+      await scheduleMorningProductivityNotification(trimmedFirst);
       setSaveMessage('Saved — morning notifications will now use your name.');
     } catch (e) {
       console.warn(e);
       setSaveMessage('Could not save. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Persist typed names when the user leaves a field, so an entered name
+  // is never lost (and never stuck showing the "Your name" placeholder).
+  const handleNameBlur = () => {
+    if (isDirty && !saving) {
+      void handleSaveName();
     }
   };
 
@@ -215,52 +229,38 @@ export const ProfileScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: 32 + insets.bottom }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: 40 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.headerSection}>
-          <Text style={[styles.kicker, { color: theme.textSecondary }]}>Make it yours</Text>
           <Text style={[styles.title, { color: theme.text }]}>Profile</Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
             Your name personalizes notifications. Your quotes fuel daily reminders.
           </Text>
         </View>
 
-        {/* Identity card */}
-        <View style={[styles.identityCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <View style={[styles.avatar, { backgroundColor: theme.accent }]}>
-            <Text style={[styles.avatarText, { color: theme.onAccent }]}>{getInitials(firstName, lastName)}</Text>
-          </View>
-          <View style={styles.identityText}>
-            <Text style={[styles.identityName, { color: theme.text }]} numberOfLines={1}>
-              {fullName || 'Your name'}
-            </Text>
-            <Text style={[styles.identitySub, { color: theme.textSecondary }]} numberOfLines={1}>
-              {fullName ? 'Notifications will greet you by name' : 'Add your name to get started'}
-            </Text>
-          </View>
-          <View style={[styles.statBadge, { backgroundColor: theme.primarySoft }]}>
-            <MaterialIcons name="notifications-active" size={16} color={theme.primary} />
-            <Text style={[styles.statBadgeText, { color: theme.primary }]}>Live</Text>
-          </View>
-        </View>
-
         {/* Name card */}
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.cardIcon, { backgroundColor: theme.primarySoft }]}>
-              <MaterialIcons name="person-outline" size={20} color={theme.primary} />
+          <View style={styles.profileRow}>
+            <View style={[styles.avatar, { backgroundColor: theme.accent }]}>
+              <Text style={[styles.avatarText, { color: theme.onAccent }]}>{getInitials(firstName, lastName)}</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: theme.text }]}>Your name</Text>
-              <Text style={[styles.cardSub, { color: theme.textSecondary }]}>
-                Used in the 8:00 AM check-in and daily greetings
+            <View style={styles.profileText}>
+              <Text style={[styles.profileName, { color: theme.text }]} numberOfLines={1}>
+                {fullName || 'Your name'}
+              </Text>
+              <Text style={[styles.profileSub, { color: theme.textSecondary }]} numberOfLines={2}>
+                {fullName
+                  ? isDirty
+                    ? 'Not saved yet — tap Save or tap outside the field'
+                    : 'Morning check-in will greet you by name'
+                  : 'Add your name below to get started'}
               </Text>
             </View>
           </View>
 
-          <View style={styles.row}>
+          <View style={styles.fieldGroup}>
             <View style={[styles.inputWrap, { backgroundColor: theme.background, borderColor: theme.border }]}>
               <Text style={[styles.label, { color: theme.textSecondary }]}>First name</Text>
               <TextInput
@@ -269,6 +269,7 @@ export const ProfileScreen = () => {
                 placeholderTextColor={theme.textSecondary}
                 value={firstName}
                 onChangeText={setFirstName}
+                onBlur={handleNameBlur}
                 autoCapitalize="words"
                 returnKeyType="next"
                 maxLength={30}
@@ -282,6 +283,7 @@ export const ProfileScreen = () => {
                 placeholderTextColor={theme.textSecondary}
                 value={lastName}
                 onChangeText={setLastName}
+                onBlur={handleNameBlur}
                 autoCapitalize="words"
                 returnKeyType="done"
                 maxLength={30}
@@ -293,7 +295,7 @@ export const ProfileScreen = () => {
           {/* Notification preview */}
           <View style={[styles.preview, { backgroundColor: theme.background, borderColor: theme.border }]}>
             <View style={styles.previewTop}>
-              <MaterialIcons name="wb-sunny" size={14} color={theme.primary} />
+              <MaterialIcons name="wb-sunny" size={16} color={theme.primary} />
               <Text style={[styles.previewApp, { color: theme.textSecondary }]}>Preview</Text>
             </View>
             <Text style={[styles.previewTitle, { color: theme.text }]}>⏰ Morning Check-in</Text>
@@ -301,22 +303,22 @@ export const ProfileScreen = () => {
           </View>
 
           <TouchableOpacity
-            style={[styles.testButton, { backgroundColor: theme.primarySoft }]}
+            style={[styles.secondaryButton, { backgroundColor: theme.primarySoft }]}
             onPress={handleTestMorning}
             disabled={testingMorning}
             activeOpacity={0.9}
             accessibilityRole="button"
             accessibilityLabel="Send test morning notification"
           >
-            <MaterialIcons name="notifications-active" size={18} color={theme.primary} />
-            <Text style={[styles.testButtonText, { color: theme.primary }]}>
+            <MaterialIcons name="notifications-active" size={20} color={theme.primary} />
+            <Text style={[styles.secondaryButtonText, { color: theme.primary }]}>
               {testingMorning ? 'Sending…' : 'Test notification'}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
-              styles.saveButton,
+              styles.primaryButton,
               { backgroundColor: theme.accent, opacity: !isDirty || saving || loading ? 0.5 : 1 },
             ]}
             onPress={handleSaveName}
@@ -326,7 +328,7 @@ export const ProfileScreen = () => {
             accessibilityLabel="Save name"
           >
             <MaterialIcons name="check" size={20} color={theme.onAccent} />
-            <Text style={[styles.saveButtonText, { color: theme.onAccent }]}>{saving ? 'Saving…' : 'Save name'}</Text>
+            <Text style={[styles.primaryButtonText, { color: theme.onAccent }]}>{saving ? 'Saving…' : 'Save name'}</Text>
           </TouchableOpacity>
           {saveMessage && (
             <View style={[styles.savedNote, { backgroundColor: theme.primarySoft }]}>
@@ -340,49 +342,37 @@ export const ProfileScreen = () => {
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <View style={styles.cardHeader}>
             <View style={[styles.cardIcon, { backgroundColor: theme.primarySoft }]}>
-              <MaterialIcons name="format-quote" size={20} color={theme.primary} />
+              <MaterialIcons name="format-quote" size={22} color={theme.primary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.cardTitle, { color: theme.text }]}>Motivational quotes</Text>
               <Text style={[styles.cardSub, { color: theme.textSecondary }]}>
-                Custom quotes are mixed into your 9 AM · 2 PM · 8 PM reminders
+                {quotes.length > 0
+                  ? `${quotes.length} custom ${quotes.length === 1 ? 'quote' : 'quotes'} mixed into your 9 AM · 2 PM · 8 PM reminders`
+                  : 'Custom quotes appear in your 9 AM · 2 PM · 8 PM reminders'}
               </Text>
-            </View>
-          </View>
-
-          <View style={styles.chipRow}>
-            <View style={[styles.chip, { backgroundColor: theme.primarySoft }]}>
-              <Text style={[styles.chipText, { color: theme.primary }]}>{quotes.length} yours</Text>
-            </View>
-            <View style={[styles.chip, { backgroundColor: theme.background, borderColor: theme.border, borderWidth: 1 }]}>
-              <Text style={[styles.chipText, { color: theme.textSecondary }]}>
-                {MOTIVATIONAL_QUOTES.length} built-in
-              </Text>
-            </View>
-            <View style={[styles.chip, { backgroundColor: theme.background, borderColor: theme.border, borderWidth: 1 }]}>
-              <Text style={[styles.chipText, { color: theme.textSecondary }]}>{quotePool.length} total</Text>
             </View>
           </View>
 
           {/* Today's quote */}
           <View style={[styles.preview, { backgroundColor: theme.background, borderColor: theme.border }]}>
             <View style={styles.previewTop}>
-              <MaterialIcons name="today" size={14} color={theme.primary} />
+              <MaterialIcons name="today" size={16} color={theme.primary} />
               <Text style={[styles.previewApp, { color: theme.textSecondary }]}>Today's quote</Text>
             </View>
             <Text style={[styles.previewBody, { color: theme.text }]}>“{todaysQuote}”</Text>
           </View>
 
           <TouchableOpacity
-            style={[styles.testButton, { backgroundColor: theme.primarySoft }]}
+            style={[styles.secondaryButton, { backgroundColor: theme.primarySoft }]}
             onPress={() => handleTestQuote(todaysQuote)}
             disabled={testingQuote}
             activeOpacity={0.9}
             accessibilityRole="button"
             accessibilityLabel="Send test quote notification"
           >
-            <MaterialIcons name="notifications-active" size={18} color={theme.primary} />
-            <Text style={[styles.testButtonText, { color: theme.primary }]}>
+            <MaterialIcons name="notifications-active" size={20} color={theme.primary} />
+            <Text style={[styles.secondaryButtonText, { color: theme.primary }]}>
               {testingQuote ? 'Sending…' : 'Show demo notification'}
             </Text>
           </TouchableOpacity>
@@ -390,10 +380,10 @@ export const ProfileScreen = () => {
           <View style={[styles.quoteInputBox, { backgroundColor: theme.background, borderWidth: editingId !== null ? 2 : 1, borderColor: editingId !== null ? theme.primary : theme.border }]}>
             {editingId !== null && (
               <View style={styles.editingBanner}>
-                <MaterialIcons name="edit" size={14} color={theme.primary} />
+                <MaterialIcons name="edit" size={16} color={theme.primary} />
                 <Text style={[styles.editingBannerText, { color: theme.primary }]}>Editing quote</Text>
                 <TouchableOpacity onPress={handleCancelEditQuote} hitSlop={10} accessibilityRole="button" accessibilityLabel="Cancel editing">
-                  <MaterialIcons name="close" size={18} color={theme.textSecondary} />
+                  <MaterialIcons name="close" size={20} color={theme.textSecondary} />
                 </TouchableOpacity>
               </View>
             )}
@@ -501,99 +491,78 @@ export const ProfileScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { paddingHorizontal: 16, paddingTop: 8 },
-  headerSection: { paddingHorizontal: 4, paddingBottom: 12 },
-  kicker: { fontSize: 13, fontWeight: '600', marginBottom: 2 },
+  scroll: { paddingHorizontal: 20, paddingTop: 12 },
+  headerSection: { marginBottom: 24 },
   title: { fontSize: 30, fontWeight: '800', letterSpacing: -0.8 },
-  subtitle: { fontSize: 13, fontWeight: '500', marginTop: 6, lineHeight: 19 },
-  identityCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginBottom: 12,
-    gap: 12,
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { fontSize: 20, fontWeight: '800' },
-  identityText: { flex: 1 },
-  identityName: { fontSize: 18, fontWeight: '800' },
-  identitySub: { fontSize: 12, fontWeight: '500', marginTop: 2 },
-  statBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  statBadgeText: { fontSize: 11, fontWeight: '800' },
-  card: { borderRadius: 22, borderWidth: 1, padding: 16, marginBottom: 12 },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
+  subtitle: { fontSize: 14, fontWeight: '500', marginTop: 8, lineHeight: 21 },
+  card: { borderRadius: 24, borderWidth: 1, padding: 20, marginBottom: 16 },
+  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 4 },
   cardIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardTitle: { fontSize: 17, fontWeight: '800' },
-  cardSub: { fontSize: 12, fontWeight: '500', marginTop: 2, lineHeight: 17 },
-  row: { flexDirection: 'row', gap: 10 },
-  inputWrap: { flex: 1, borderRadius: 16, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
+  cardTitle: { fontSize: 18, fontWeight: '800' },
+  cardSub: { fontSize: 13, fontWeight: '500', marginTop: 4, lineHeight: 19 },
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { fontSize: 22, fontWeight: '800' },
+  profileText: { flex: 1 },
+  profileName: { fontSize: 20, fontWeight: '800' },
+  profileSub: { fontSize: 13, fontWeight: '500', marginTop: 4, lineHeight: 19 },
+  fieldGroup: { gap: 12, marginTop: 20 },
+  inputWrap: { borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 12 },
   label: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
-  input: { fontSize: 16, fontWeight: '600', paddingVertical: 4 },
-  preview: { borderRadius: 16, borderWidth: 1, padding: 12, marginTop: 12 },
-  previewTop: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
-  previewApp: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
-  previewTitle: { fontSize: 14, fontWeight: '800', marginBottom: 2 },
-  previewBody: { fontSize: 13, fontWeight: '500', lineHeight: 19 },
-  testButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 14,
-    paddingVertical: 12,
-    marginTop: 10,
-  },
-  testButtonText: { fontSize: 14, fontWeight: '800' },
-  saveButton: {
+  input: { fontSize: 17, fontWeight: '600', paddingVertical: 6 },
+  preview: { borderRadius: 16, borderWidth: 1, padding: 16, marginTop: 16 },
+  previewTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  previewApp: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
+  previewTitle: { fontSize: 15, fontWeight: '800', marginBottom: 4 },
+  previewBody: { fontSize: 14, fontWeight: '500', lineHeight: 21 },
+  primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     borderRadius: 16,
     paddingVertical: 14,
-    marginTop: 12,
+    marginTop: 16,
   },
-  saveButtonText: { fontSize: 15, fontWeight: '800' },
+  primaryButtonText: { fontSize: 15, fontWeight: '800' },
+  secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 16,
+    paddingVertical: 14,
+    marginTop: 16,
+  },
+  secondaryButtonText: { fontSize: 15, fontWeight: '800' },
   savedNote: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     borderRadius: 12,
-    padding: 10,
-    marginTop: 10,
+    padding: 12,
+    marginTop: 16,
   },
-  savedNoteText: { flex: 1, fontSize: 12, fontWeight: '600', lineHeight: 17 },
-  chipRow: { flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' },
-  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
-  chipText: { fontSize: 12, fontWeight: '700' },
-  quoteInputBox: { borderRadius: 16, borderWidth: 1, padding: 12 },
-  quoteInput: { fontSize: 15, fontWeight: '500', lineHeight: 22, minHeight: 64, textAlignVertical: 'top' },
+  savedNoteText: { flex: 1, fontSize: 13, fontWeight: '600', lineHeight: 19 },
+  quoteInputBox: { borderRadius: 16, borderWidth: 1, padding: 16, marginTop: 16 },
+  quoteInput: { fontSize: 15, fontWeight: '500', lineHeight: 23, minHeight: 64, textAlignVertical: 'top' },
   quoteInputFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: 12,
   },
   charCount: { fontSize: 12, fontWeight: '600' },
   addButton: {
@@ -601,45 +570,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 12,
   },
   addButtonText: { fontSize: 14, fontWeight: '800' },
-  emptyQuotes: { alignItems: 'center', paddingVertical: 20, paddingHorizontal: 12 },
+  emptyQuotes: { alignItems: 'center', paddingVertical: 24, paddingHorizontal: 16, marginTop: 8 },
   emptyIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 20,
+    width: 64,
+    height: 64,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  emptyTitle: { fontSize: 16, fontWeight: '800', marginBottom: 4 },
-  emptyText: { fontSize: 13, fontWeight: '500', textAlign: 'center', lineHeight: 19 },
-  quoteList: { gap: 8, marginTop: 12 },
+  emptyTitle: { fontSize: 16, fontWeight: '800', marginBottom: 6 },
+  emptyText: { fontSize: 14, fontWeight: '500', textAlign: 'center', lineHeight: 21 },
+  quoteList: { gap: 12, marginTop: 16 },
   quoteRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
-    borderRadius: 14,
+    gap: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 12,
+    padding: 14,
   },
   quoteMark: {
-    width: 28,
-    height: 28,
-    borderRadius: 9,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quoteText: { flex: 1, fontSize: 13, fontWeight: '500', lineHeight: 19 },
+  quoteText: { flex: 1, fontSize: 14, fontWeight: '500', lineHeight: 21 },
   quoteRowActions: { flexDirection: 'row', alignItems: 'center' },
   iconBtn: { padding: 10, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  deleteBtn: { padding: 10, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   quoteActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cancelButton: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
   },
@@ -647,8 +615,8 @@ const styles = StyleSheet.create({
   editingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
+    gap: 8,
+    marginBottom: 12,
   },
-  editingBannerText: { flex: 1, fontSize: 12, fontWeight: '800' },
+  editingBannerText: { flex: 1, fontSize: 13, fontWeight: '800' },
 });
