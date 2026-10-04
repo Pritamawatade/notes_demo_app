@@ -26,6 +26,8 @@ import {
   buildMorningMessages,
   scheduleMorningProductivityNotification,
   scheduleMotivationalNotifications,
+  sendTestMorningNotification,
+  sendTestQuoteNotification,
 } from '../utils/notifications';
 import { useTheme } from '../theme/useTheme';
 
@@ -51,6 +53,8 @@ export const ProfileScreen = () => {
   const [newQuote, setNewQuote] = useState('');
   const [addingQuote, setAddingQuote] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [testingMorning, setTestingMorning] = useState(false);
+  const [testingQuote, setTestingQuote] = useState(false);
 
   const loadAll = useCallback(async () => {
     try {
@@ -148,6 +152,42 @@ export const ProfileScreen = () => {
     ]);
   };
 
+  const handleTestMorning = async () => {
+    if (testingMorning) return;
+    setTestingMorning(true);
+    try {
+      const ok = await sendTestMorningNotification(firstName.trim());
+      if (ok) {
+        Alert.alert('Test sent 🔔', 'Check your notification tray to see how the morning check-in looks.');
+      } else {
+        Alert.alert(
+          'Notifications blocked',
+          'Please allow notifications for NoteDown in Settings → Apps → NoteDown → Notifications, then try again.'
+        );
+      }
+    } finally {
+      setTestingMorning(false);
+    }
+  };
+
+  const handleTestQuote = async (body?: string) => {
+    if (testingQuote) return;
+    setTestingQuote(true);
+    try {
+      const ok = await sendTestQuoteNotification(body);
+      if (ok) {
+        Alert.alert('Test sent 🔔', 'Check your notification tray to see how the daily reminder looks.');
+      } else {
+        Alert.alert(
+          'Notifications blocked',
+          'Please allow notifications for NoteDown in Settings → Apps → NoteDown → Notifications, then try again.'
+        );
+      }
+    } finally {
+      setTestingQuote(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top }]}
@@ -240,6 +280,20 @@ export const ProfileScreen = () => {
           </View>
 
           <TouchableOpacity
+            style={[styles.testButton, { backgroundColor: theme.primarySoft }]}
+            onPress={handleTestMorning}
+            disabled={testingMorning}
+            activeOpacity={0.9}
+            accessibilityRole="button"
+            accessibilityLabel="Send test morning notification"
+          >
+            <MaterialIcons name="notifications-active" size={18} color={theme.primary} />
+            <Text style={[styles.testButtonText, { color: theme.primary }]}>
+              {testingMorning ? 'Sending…' : 'Test notification'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={[
               styles.saveButton,
               { backgroundColor: theme.accent, opacity: !isDirty || saving || loading ? 0.5 : 1 },
@@ -297,6 +351,20 @@ export const ProfileScreen = () => {
             </View>
             <Text style={[styles.previewBody, { color: theme.text }]}>“{todaysQuote}”</Text>
           </View>
+
+          <TouchableOpacity
+            style={[styles.testButton, { backgroundColor: theme.primarySoft }]}
+            onPress={() => handleTestQuote(todaysQuote)}
+            disabled={testingQuote}
+            activeOpacity={0.9}
+            accessibilityRole="button"
+            accessibilityLabel="Send test quote notification"
+          >
+            <MaterialIcons name="notifications-active" size={18} color={theme.primary} />
+            <Text style={[styles.testButtonText, { color: theme.primary }]}>
+              {testingQuote ? 'Sending…' : 'Show demo notification'}
+            </Text>
+          </TouchableOpacity>
 
           <View style={[styles.quoteInputBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
             <TextInput
@@ -426,6 +494,16 @@ const styles = StyleSheet.create({
   previewApp: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
   previewTitle: { fontSize: 14, fontWeight: '800', marginBottom: 2 },
   previewBody: { fontSize: 13, fontWeight: '500', lineHeight: 19 },
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 14,
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  testButtonText: { fontSize: 14, fontWeight: '800' },
   saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
