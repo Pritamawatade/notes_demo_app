@@ -39,6 +39,7 @@ export const MOTIVATIONAL_QUOTES = [
   "Chaos isn't a pit. Chaos is a ladder.",
   "A lion does not concern himself with the opinion of sheep.",
   "I am the blood of the dragon. I must be strong.",
+  "A mind needs books like a sword needs a whetstone",
   // One Piece
   "If you don't take risks, you can't create a future.",
   "No matter how hard or impossible it is, never lose sight of your goal.",
