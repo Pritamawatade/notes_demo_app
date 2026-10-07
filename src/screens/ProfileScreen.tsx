@@ -229,260 +229,301 @@ export const ProfileScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: 40 + insets.bottom }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: 24 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.headerSection}>
-          <Text style={[styles.title, { color: theme.text }]}>Profile</Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            Your name personalizes notifications. Your quotes fuel daily reminders.
-          </Text>
-        </View>
-
-        {/* Name card */}
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <View style={styles.profileRow}>
-            <View style={[styles.avatar, { backgroundColor: theme.accent }]}>
-              <Text style={[styles.avatarText, { color: theme.onAccent }]}>{getInitials(firstName, lastName)}</Text>
-            </View>
-            <View style={styles.profileText}>
-              <Text style={[styles.profileName, { color: theme.text }]} numberOfLines={1}>
-                {fullName || 'Your name'}
-              </Text>
-              <Text style={[styles.profileSub, { color: theme.textSecondary }]} numberOfLines={2}>
-                {fullName
-                  ? isDirty
-                    ? 'Not saved yet — tap Save or tap outside the field'
-                    : 'Morning check-in will greet you by name'
-                  : 'Add your name below to get started'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <View style={[styles.inputWrap, { backgroundColor: theme.background, borderColor: theme.border }]}>
-              <Text style={[styles.label, { color: theme.textSecondary }]}>First name</Text>
-              <TextInput
-                style={[styles.input, { color: theme.text }]}
-                placeholder="e.g. Alex"
-                placeholderTextColor={theme.textSecondary}
-                value={firstName}
-                onChangeText={setFirstName}
-                onBlur={handleNameBlur}
-                autoCapitalize="words"
-                returnKeyType="next"
-                maxLength={30}
-              />
-            </View>
-            <View style={[styles.inputWrap, { backgroundColor: theme.background, borderColor: theme.border }]}>
-              <Text style={[styles.label, { color: theme.textSecondary }]}>Last name</Text>
-              <TextInput
-                style={[styles.input, { color: theme.text }]}
-                placeholder="e.g. Rivera"
-                placeholderTextColor={theme.textSecondary}
-                value={lastName}
-                onChangeText={setLastName}
-                onBlur={handleNameBlur}
-                autoCapitalize="words"
-                returnKeyType="done"
-                maxLength={30}
-                onSubmitEditing={handleSaveName}
-              />
-            </View>
-          </View>
-
-          {/* Notification preview */}
-          <View style={[styles.preview, { backgroundColor: theme.background, borderColor: theme.border }]}>
-            <View style={styles.previewTop}>
-              <MaterialIcons name="wb-sunny" size={16} color={theme.primary} />
-              <Text style={[styles.previewApp, { color: theme.textSecondary }]}>Preview</Text>
-            </View>
-            <Text style={[styles.previewTitle, { color: theme.text }]}>⏰ Morning Check-in</Text>
-            <Text style={[styles.previewBody, { color: theme.textSecondary }]}>{previewMessage}</Text>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.secondaryButton, { backgroundColor: theme.primarySoft }]}
-            onPress={handleTestMorning}
-            disabled={testingMorning}
-            activeOpacity={0.9}
-            accessibilityRole="button"
-            accessibilityLabel="Send test morning notification"
-          >
-            <MaterialIcons name="notifications-active" size={20} color={theme.primary} />
-            <Text style={[styles.secondaryButtonText, { color: theme.primary }]}>
-              {testingMorning ? 'Sending…' : 'Test notification'}
+        <View style={styles.page}>
+          <View style={styles.headerSection}>
+            <Text style={[styles.kicker, { color: theme.primary }]}>YOUR SPACE</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Profile</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+              Make your reminders feel more personal.
             </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              { backgroundColor: theme.accent, opacity: !isDirty || saving || loading ? 0.5 : 1 },
-            ]}
-            onPress={handleSaveName}
-            disabled={!isDirty || saving || loading}
-            activeOpacity={0.9}
-            accessibilityRole="button"
-            accessibilityLabel="Save name"
-          >
-            <MaterialIcons name="check" size={20} color={theme.onAccent} />
-            <Text style={[styles.primaryButtonText, { color: theme.onAccent }]}>{saving ? 'Saving…' : 'Save name'}</Text>
-          </TouchableOpacity>
-          {saveMessage && (
-            <View style={[styles.savedNote, { backgroundColor: theme.primarySoft }]}>
-              <MaterialIcons name="check-circle" size={16} color={theme.primary} />
-              <Text style={[styles.savedNoteText, { color: theme.primary }]}>{saveMessage}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Quotes card */}
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.cardIcon, { backgroundColor: theme.primarySoft }]}>
-              <MaterialIcons name="format-quote" size={22} color={theme.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: theme.text }]}>Motivational quotes</Text>
-              <Text style={[styles.cardSub, { color: theme.textSecondary }]}>
-                {quotes.length > 0
-                  ? `${quotes.length} custom ${quotes.length === 1 ? 'quote' : 'quotes'} mixed into your 9 AM · 2 PM · 8 PM reminders`
-                  : 'Custom quotes appear in your 9 AM · 2 PM · 8 PM reminders'}
-              </Text>
-            </View>
           </View>
 
-          {/* Today's quote */}
-          <View style={[styles.preview, { backgroundColor: theme.background, borderColor: theme.border }]}>
-            <View style={styles.previewTop}>
-              <MaterialIcons name="today" size={16} color={theme.primary} />
-              <Text style={[styles.previewApp, { color: theme.textSecondary }]}>Today's quote</Text>
-            </View>
-            <Text style={[styles.previewBody, { color: theme.text }]}>“{todaysQuote}”</Text>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.secondaryButton, { backgroundColor: theme.primarySoft }]}
-            onPress={() => handleTestQuote(todaysQuote)}
-            disabled={testingQuote}
-            activeOpacity={0.9}
-            accessibilityRole="button"
-            accessibilityLabel="Send test quote notification"
-          >
-            <MaterialIcons name="notifications-active" size={20} color={theme.primary} />
-            <Text style={[styles.secondaryButtonText, { color: theme.primary }]}>
-              {testingQuote ? 'Sending…' : 'Show demo notification'}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={[styles.quoteInputBox, { backgroundColor: theme.background, borderWidth: editingId !== null ? 2 : 1, borderColor: editingId !== null ? theme.primary : theme.border }]}>
-            {editingId !== null && (
-              <View style={styles.editingBanner}>
-                <MaterialIcons name="edit" size={16} color={theme.primary} />
-                <Text style={[styles.editingBannerText, { color: theme.primary }]}>Editing quote</Text>
-                <TouchableOpacity onPress={handleCancelEditQuote} hitSlop={10} accessibilityRole="button" accessibilityLabel="Cancel editing">
-                  <MaterialIcons name="close" size={20} color={theme.textSecondary} />
-                </TouchableOpacity>
+          <View style={styles.section}>
+            <View style={styles.sectionHeading}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Your details</Text>
+                <Text style={[styles.sectionCaption, { color: theme.textSecondary }]}>Used in your morning check-in</Text>
               </View>
-            )}
-            <TextInput
-              style={[styles.quoteInput, { color: theme.text }]}
-              placeholder="Write your own quote… e.g. Small steps every day beat big leaps once."
-              placeholderTextColor={theme.textSecondary}
-              value={newQuote}
-              onChangeText={setNewQuote}
-              multiline
-              maxLength={280}
-            />
-            <View style={styles.quoteInputFooter}>
-              <Text style={[styles.charCount, { color: theme.textSecondary }]}>
-                {newQuote.trim().length}/280
-              </Text>
-              <View style={styles.quoteActions}>
-                {editingId !== null && (
-                  <TouchableOpacity
-                    style={[styles.cancelButton, { borderColor: theme.border }]}
-                    onPress={handleCancelEditQuote}
-                    disabled={addingQuote}
-                    activeOpacity={0.9}
-                    accessibilityRole="button"
-                    accessibilityLabel="Cancel editing"
-                  >
-                    <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
-                  </TouchableOpacity>
-                )}
+            </View>
+
+            <View style={[styles.sectionSurface, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <View style={styles.profileRow}>
+                <View style={[styles.avatar, { backgroundColor: theme.accent }]}>
+                  <Text style={[styles.avatarText, { color: theme.onAccent }]}>{getInitials(firstName, lastName)}</Text>
+                </View>
+                <View style={styles.profileText}>
+                  <Text style={[styles.profileName, { color: theme.text }]} numberOfLines={1}>
+                    {fullName || 'Your name'}
+                  </Text>
+                  <Text style={[styles.profileSub, { color: theme.textSecondary }]} numberOfLines={2}>
+                    {fullName
+                      ? isDirty
+                        ? 'Unsaved changes'
+                        : 'Morning check-in will greet you by name'
+                      : 'Add a name to personalize your reminders'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.nameFields}>
+                <View style={styles.nameField}>
+                  <Text style={[styles.label, { color: theme.textSecondary }]}>First name</Text>
+                  <TextInput
+                    style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.border }]}
+                    placeholder="e.g. Alex"
+                    placeholderTextColor={theme.textSecondary}
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    onBlur={handleNameBlur}
+                    autoCapitalize="words"
+                    returnKeyType="next"
+                    maxLength={30}
+                    accessibilityLabel="First name"
+                  />
+                </View>
+                <View style={styles.nameField}>
+                  <Text style={[styles.label, { color: theme.textSecondary }]}>Last name</Text>
+                  <TextInput
+                    style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.border }]}
+                    placeholder="e.g. Rivera"
+                    placeholderTextColor={theme.textSecondary}
+                    value={lastName}
+                    onChangeText={setLastName}
+                    onBlur={handleNameBlur}
+                    autoCapitalize="words"
+                    returnKeyType="done"
+                    maxLength={30}
+                    onSubmitEditing={handleSaveName}
+                    accessibilityLabel="Last name"
+                  />
+                </View>
+              </View>
+
+              <View style={[styles.notificationPreview, { borderTopColor: theme.border }]}>
+                <View style={[styles.previewIcon, { backgroundColor: theme.primarySoft }]}>
+                  <MaterialIcons name="wb-sunny" size={19} color={theme.primary} />
+                </View>
+                <View style={styles.previewCopy}>
+                  <Text style={[styles.previewTitle, { color: theme.text }]}>Morning check-in</Text>
+                  <Text style={[styles.previewBody, { color: theme.textSecondary }]} numberOfLines={2}>
+                    {previewMessage}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: theme.primarySoft }]}
+                  onPress={handleTestMorning}
+                  disabled={testingMorning}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Send test morning notification"
+                >
+                  <MaterialIcons name="notifications-active" size={18} color={theme.primary} />
+                  <Text style={[styles.testButtonText, { color: theme.primary }]}>
+                    {testingMorning ? 'Sending…' : 'Test morning'}
+                  </Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity
                   style={[
-                    styles.addButton,
-                    { backgroundColor: theme.accent, opacity: newQuote.trim() && !addingQuote ? 1 : 0.5 },
+                    styles.actionButton,
+                    { backgroundColor: theme.accent, opacity: !isDirty || saving || loading ? 0.5 : 1 },
                   ]}
-                  onPress={handleAddQuote}
-                  disabled={!newQuote.trim() || addingQuote}
-                  activeOpacity={0.9}
+                  onPress={handleSaveName}
+                  disabled={!isDirty || saving || loading}
+                  activeOpacity={0.85}
                   accessibilityRole="button"
-                  accessibilityLabel={editingId !== null ? 'Save quote' : 'Add quote'}
+                  accessibilityLabel="Save name"
                 >
-                  <MaterialIcons name={editingId !== null ? 'check' : 'add'} size={20} color={theme.onAccent} />
-                  <Text style={[styles.addButtonText, { color: theme.onAccent }]}>
-                    {addingQuote ? 'Saving…' : editingId !== null ? 'Save quote' : 'Add quote'}
+                  <MaterialIcons name="check" size={18} color={theme.onAccent} />
+                  <Text style={[styles.saveButtonText, { color: theme.onAccent }]}>
+                    {saving ? 'Saving…' : 'Save name'}
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              {saveMessage && (
+                <View style={styles.saveStatus}>
+                  <MaterialIcons
+                    name={saveMessage.startsWith('Saved') ? 'check-circle' : 'error-outline'}
+                    size={16}
+                    color={saveMessage.startsWith('Saved') ? theme.primary : theme.danger}
+                  />
+                  <Text
+                    style={[
+                      styles.saveStatusText,
+                      { color: saveMessage.startsWith('Saved') ? theme.primary : theme.danger },
+                    ]}
+                  >
+                    {saveMessage}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
-          {quotes.length === 0 ? (
-            <View style={styles.emptyQuotes}>
-              <View style={[styles.emptyIcon, { backgroundColor: theme.primarySoft }]}>
-                <MaterialIcons name="lightbulb-outline" size={28} color={theme.primary} />
+          <View style={styles.section}>
+            <View style={styles.sectionHeading}>
+              <View style={styles.sectionHeadingCopy}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Daily inspiration</Text>
+                <Text style={[styles.sectionCaption, { color: theme.textSecondary }]}>
+                  Quotes appear in 9 AM, 2 PM, and 8 PM reminders.
+                </Text>
               </View>
-              <Text style={[styles.emptyTitle, { color: theme.text }]}>No custom quotes yet</Text>
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                Add your first quote above — it will start appearing in notifications and on the home
-                screen.
-              </Text>
+              <View style={[styles.countBadge, { backgroundColor: theme.primarySoft }]}>
+                <Text style={[styles.countBadgeText, { color: theme.primary }]}>{quotes.length}</Text>
+              </View>
             </View>
-          ) : (
-            <View style={styles.quoteList}>
-              {quotes.map((q) => (
-                <View
-                  key={q.id}
-                  style={[styles.quoteRow, { backgroundColor: theme.background, borderColor: theme.border }]}
-                >
-                  <View style={[styles.quoteMark, { backgroundColor: theme.primarySoft }]}>
-                    <MaterialIcons name="format-quote" size={16} color={theme.primary} />
-                  </View>
-                  <Text style={[styles.quoteText, { color: theme.text }]}>{q.text}</Text>
-                  <View style={styles.quoteRowActions}>
+
+            <View style={[styles.sectionSurface, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <View style={[styles.quoteFeature, { backgroundColor: theme.primarySoft }]}>
+                <View style={styles.quoteFeatureLabel}>
+                  <MaterialIcons name="format-quote" size={18} color={theme.primary} />
+                  <Text style={[styles.quoteFeatureKicker, { color: theme.primary }]}>QUOTE OF THE DAY</Text>
+                </View>
+                <Text style={[styles.quoteFeatureText, { color: theme.text }]}>“{todaysQuote}”</Text>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.quoteTestButton, { borderColor: theme.border }]}
+                onPress={() => handleTestQuote(todaysQuote)}
+                disabled={testingQuote}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Send test quote notification"
+              >
+                <MaterialIcons name="notifications-active" size={18} color={theme.primary} />
+                <Text style={[styles.quoteTestButtonText, { color: theme.primary }]}>
+                  {testingQuote ? 'Sending…' : 'Preview notification'}
+                </Text>
+              </TouchableOpacity>
+
+              <View
+                style={[
+                  styles.quoteInputBox,
+                  {
+                    backgroundColor: theme.background,
+                    borderColor: editingId !== null ? theme.primary : theme.border,
+                    borderWidth: editingId !== null ? 2 : 1,
+                  },
+                ]}
+              >
+                {editingId !== null && (
+                  <View style={styles.editingBanner}>
+                    <MaterialIcons name="edit" size={16} color={theme.primary} />
+                    <Text style={[styles.editingBannerText, { color: theme.primary }]}>Editing quote</Text>
                     <TouchableOpacity
-                      onPress={() => handleStartEditQuote(q)}
+                      onPress={handleCancelEditQuote}
                       hitSlop={10}
-                      style={styles.iconBtn}
                       accessibilityRole="button"
-                      accessibilityLabel={`Edit quote: ${q.text.slice(0, 40)}`}
+                      accessibilityLabel="Cancel editing"
                     >
-                      <MaterialIcons
-                        name="edit"
-                        size={20}
-                        color={editingId === q.id ? theme.primary : theme.textSecondary}
-                      />
+                      <MaterialIcons name="close" size={20} color={theme.textSecondary} />
                     </TouchableOpacity>
+                  </View>
+                )}
+                <TextInput
+                  style={[styles.quoteInput, { color: theme.text }]}
+                  placeholder="Write a quote to encourage yourself…"
+                  placeholderTextColor={theme.textSecondary}
+                  value={newQuote}
+                  onChangeText={setNewQuote}
+                  multiline
+                  maxLength={280}
+                  accessibilityLabel="Custom motivational quote"
+                  accessibilityHint="Write at least 10 characters."
+                />
+                <View style={styles.quoteInputFooter}>
+                  <Text style={[styles.charCount, { color: theme.textSecondary }]}>
+                    {newQuote.trim().length}/280
+                  </Text>
+                  <View style={styles.quoteActions}>
+                    {editingId !== null && (
+                      <TouchableOpacity
+                        style={[styles.cancelButton, { borderColor: theme.border }]}
+                        onPress={handleCancelEditQuote}
+                        disabled={addingQuote}
+                        activeOpacity={0.85}
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancel editing"
+                      >
+                        <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
+                      </TouchableOpacity>
+                    )}
                     <TouchableOpacity
-                      onPress={() => handleDeleteQuote(q)}
-                      hitSlop={10}
-                      style={styles.iconBtn}
+                      style={[
+                        styles.addButton,
+                        { backgroundColor: theme.accent, opacity: newQuote.trim() && !addingQuote ? 1 : 0.5 },
+                      ]}
+                      onPress={handleAddQuote}
+                      disabled={!newQuote.trim() || addingQuote}
+                      activeOpacity={0.85}
                       accessibilityRole="button"
-                      accessibilityLabel={`Delete quote: ${q.text.slice(0, 40)}`}
+                      accessibilityLabel={editingId !== null ? 'Save quote' : 'Add quote'}
                     >
-                      <MaterialIcons name="delete-outline" size={20} color={theme.danger} />
+                      <MaterialIcons name={editingId !== null ? 'check' : 'add'} size={18} color={theme.onAccent} />
+                      <Text style={[styles.addButtonText, { color: theme.onAccent }]}>
+                        {addingQuote ? 'Saving…' : editingId !== null ? 'Save quote' : 'Add quote'}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </View>
-              ))}
+              </View>
+
+              {quotes.length === 0 ? (
+                <View style={styles.emptyQuotes}>
+                  <MaterialIcons name="lightbulb-outline" size={19} color={theme.textSecondary} />
+                  <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                    Your saved quotes will appear here and in your reminders.
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.quoteList}>
+                  {quotes.map((quote, index) => (
+                    <View
+                      key={quote.id}
+                      style={[
+                        styles.quoteRow,
+                        index > 0 && { borderTopColor: theme.border, borderTopWidth: 1 },
+                      ]}
+                    >
+                      <Text style={[styles.quoteText, { color: theme.text }]}>{quote.text}</Text>
+                      <View style={styles.quoteRowActions}>
+                        <TouchableOpacity
+                          onPress={() => handleStartEditQuote(quote)}
+                          hitSlop={8}
+                          style={styles.iconBtn}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Edit quote: ${quote.text.slice(0, 40)}`}
+                        >
+                          <MaterialIcons
+                            name="edit"
+                            size={19}
+                            color={editingId === quote.id ? theme.primary : theme.textSecondary}
+                          />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleDeleteQuote(quote)}
+                          hitSlop={8}
+                          style={styles.iconBtn}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Delete quote: ${quote.text.slice(0, 40)}`}
+                        >
+                          <MaterialIcons name="delete-outline" size={19} color={theme.danger} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
-          )}
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -491,132 +532,163 @@ export const ProfileScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { paddingHorizontal: 20, paddingTop: 12 },
-  headerSection: { marginBottom: 24 },
+  scroll: { flexGrow: 1, alignItems: 'center', paddingHorizontal: 20, paddingTop: 12 },
+  page: { width: '100%', maxWidth: 620 },
+  headerSection: { marginBottom: 22 },
+  kicker: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginBottom: 4 },
   title: { fontSize: 30, fontWeight: '800', letterSpacing: -0.8 },
-  subtitle: { fontSize: 14, fontWeight: '500', marginTop: 8, lineHeight: 21 },
-  card: { borderRadius: 24, borderWidth: 1, padding: 20, marginBottom: 16 },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 4 },
-  cardIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardTitle: { fontSize: 18, fontWeight: '800' },
-  cardSub: { fontSize: 13, fontWeight: '500', marginTop: 4, lineHeight: 19 },
-  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { fontSize: 22, fontWeight: '800' },
-  profileText: { flex: 1 },
-  profileName: { fontSize: 20, fontWeight: '800' },
-  profileSub: { fontSize: 13, fontWeight: '500', marginTop: 4, lineHeight: 19 },
-  fieldGroup: { gap: 12, marginTop: 20 },
-  inputWrap: { borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 12 },
-  label: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
-  input: { fontSize: 17, fontWeight: '600', paddingVertical: 6 },
-  preview: { borderRadius: 16, borderWidth: 1, padding: 16, marginTop: 16 },
-  previewTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  previewApp: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
-  previewTitle: { fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  previewBody: { fontSize: 14, fontWeight: '500', lineHeight: 21 },
-  primaryButton: {
+  subtitle: { fontSize: 14, fontWeight: '500', marginTop: 4, lineHeight: 20 },
+  section: { marginBottom: 22 },
+  sectionHeading: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 16,
-    paddingVertical: 14,
-    marginTop: 16,
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    gap: 12,
   },
-  primaryButtonText: { fontSize: 15, fontWeight: '800' },
-  secondaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 16,
-    paddingVertical: 14,
-    marginTop: 16,
-  },
-  secondaryButtonText: { fontSize: 15, fontWeight: '800' },
-  savedNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  sectionHeadingCopy: { flex: 1 },
+  sectionTitle: { fontSize: 17, fontWeight: '800', letterSpacing: -0.2 },
+  sectionCaption: { fontSize: 12, fontWeight: '500', lineHeight: 17, marginTop: 2 },
+  countBadge: {
+    minWidth: 32,
+    height: 32,
+    paddingHorizontal: 8,
     borderRadius: 12,
-    padding: 12,
-    marginTop: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  savedNoteText: { flex: 1, fontSize: 13, fontWeight: '600', lineHeight: 19 },
-  quoteInputBox: { borderRadius: 16, borderWidth: 1, padding: 16, marginTop: 16 },
-  quoteInput: { fontSize: 15, fontWeight: '500', lineHeight: 23, minHeight: 64, textAlignVertical: 'top' },
+  countBadgeText: { fontSize: 13, fontWeight: '800' },
+  sectionSurface: { borderRadius: 20, borderWidth: 1, padding: 14 },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { fontSize: 19, fontWeight: '800' },
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+  profileText: { flex: 1 },
+  profileName: { fontSize: 17, fontWeight: '800' },
+  profileSub: { fontSize: 12, fontWeight: '500', marginTop: 3, lineHeight: 16 },
+  nameFields: { flexDirection: 'row', gap: 10 },
+  nameField: { flex: 1, minWidth: 0 },
+  label: { fontSize: 11, fontWeight: '700', marginBottom: 5 },
+  input: {
+    minHeight: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  notificationPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderTopWidth: 1,
+    marginTop: 13,
+    paddingTop: 13,
+  },
+  previewIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewCopy: { flex: 1 },
+  previewTitle: { fontSize: 13, fontWeight: '800', marginBottom: 2 },
+  previewBody: { fontSize: 12, fontWeight: '500', lineHeight: 17 },
+  buttonRow: { flexDirection: 'row', gap: 8, marginTop: 13 },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 46,
+    flex: 1,
+    borderRadius: 13,
+    paddingHorizontal: 8,
+  },
+  testButtonText: { fontSize: 13, fontWeight: '800' },
+  saveButtonText: { fontSize: 13, fontWeight: '800' },
+  saveStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginTop: 10,
+  },
+  saveStatusText: { flex: 1, fontSize: 12, fontWeight: '600', lineHeight: 17 },
+  quoteFeature: { borderRadius: 14, padding: 13, marginBottom: 10 },
+  quoteFeatureLabel: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
+  quoteFeatureKicker: { fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
+  quoteFeatureText: { fontSize: 15, fontWeight: '600', lineHeight: 22 },
+  quoteTestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  quoteTestButtonText: { fontSize: 13, fontWeight: '700' },
+  quoteInputBox: { borderRadius: 14, padding: 12 },
+  quoteInput: { fontSize: 15, fontWeight: '500', lineHeight: 22, minHeight: 58, textAlignVertical: 'top' },
   quoteInputFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 12,
+    gap: 8,
+    marginTop: 8,
   },
-  charCount: { fontSize: 12, fontWeight: '600' },
+  charCount: { fontSize: 11, fontWeight: '600' },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  addButtonText: { fontSize: 14, fontWeight: '800' },
-  emptyQuotes: { alignItems: 'center', paddingVertical: 24, paddingHorizontal: 16, marginTop: 8 },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 22,
-    alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    gap: 5,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    borderRadius: 11,
   },
-  emptyTitle: { fontSize: 16, fontWeight: '800', marginBottom: 6 },
-  emptyText: { fontSize: 14, fontWeight: '500', textAlign: 'center', lineHeight: 21 },
-  quoteList: { gap: 12, marginTop: 16 },
+  addButtonText: { fontSize: 13, fontWeight: '800' },
+  emptyQuotes: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 12, paddingVertical: 6 },
+  emptyText: { flex: 1, fontSize: 12, fontWeight: '500', lineHeight: 17 },
+  quoteList: { marginTop: 8 },
   quoteRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 7,
+    paddingLeft: 2,
   },
-  quoteMark: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+  quoteText: { flex: 1, fontSize: 13, fontWeight: '500', lineHeight: 19 },
+  quoteRowActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  iconBtn: {
+    padding: 8,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quoteText: { flex: 1, fontSize: 14, fontWeight: '500', lineHeight: 21 },
-  quoteRowActions: { flexDirection: 'row', alignItems: 'center' },
-  iconBtn: { padding: 10, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   quoteActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cancelButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: 12,
+    borderRadius: 11,
     borderWidth: 1,
   },
-  cancelButtonText: { fontSize: 14, fontWeight: '800' },
+  cancelButtonText: { fontSize: 13, fontWeight: '800' },
   editingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   editingBannerText: { flex: 1, fontSize: 13, fontWeight: '800' },
 });
