@@ -16,6 +16,7 @@ export interface Todo {
   is_completed: number; // 0 or 1
   type: 'daily' | 'weekly' | 'monthly' | 'yearly';
   created_at: string;
+  sort_order: number;
 }
 
 export interface UserProfile {
@@ -51,7 +52,8 @@ export const initDatabase = async () => {
       text TEXT NOT NULL,
       is_completed INTEGER DEFAULT 0,
       type TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      sort_order INTEGER DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS profile (
       id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -70,6 +72,24 @@ export const initDatabase = async () => {
   try {
     await db.execAsync('ALTER TABLE notes ADD COLUMN reminder_time TEXT;');
   } catch (e) {}
+  try {
+    await db.execAsync('ALTER TABLE todos ADD COLUMN sort_order INTEGER DEFAULT 0;');
+  } catch (e) {}
+  // Backfill sort_order for pre-existing todos so the current
+  // newest-first order is preserved (rank within each type).
+  try {
+    await db.execAsync(`
+      UPDATE todos SET sort_order = (
+        SELECT COUNT(*) FROM todos t2
+        WHERE t2.type = todos.type
+          AND (t2.created_at > todos.created_at
+            OR (t2.created_at = todos.created_at AND t2.id > todos.id))
+      )
+      WHERE sort_order IS NULL OR sort_order = 0;
+    `);
+  } catch (e) {
+    console.warn('Failed to backfill todo sort_order', e);
+  }
   
   console.log('Database initialized');
 };
@@ -112,17 +132,34 @@ export const togglePin = async (id: number, currentStatus: number): Promise<void
 // Todo CRUD
 export const getTodos = async (type: string): Promise<Todo[]> => {
   return await db.getAllAsync<Todo>(
-    'SELECT * FROM todos WHERE type = ? ORDER BY created_at DESC',
+    'SELECT * FROM todos WHERE type = ? ORDER BY sort_order ASC, created_at DESC, id DESC',
     [type]
   );
 };
 
 export const addTodo = async (text: string, type: string): Promise<number> => {
+  // Prepend new tasks at the top (matches the previous newest-first order).
+  const row = await db.getFirstAsync<{ m: number | null }>(
+    'SELECT MIN(sort_order) as m FROM todos WHERE type = ?',
+    [type]
+  );
+  const nextOrder = (row?.m ?? 1) - 1;
   const result = await db.runAsync(
-    'INSERT INTO todos (text, type, created_at) VALUES (?, ?, DATETIME("now"))',
-    [text, type]
+    'INSERT INTO todos (text, type, created_at, sort_order) VALUES (?, ?, DATETIME("now"), ?)',
+    [text, type, nextOrder]
   );
   return result.lastInsertRowId;
+};
+
+/** Persist a new manual order for one section (ids in top-to-bottom order). */
+export const setTodoOrder = async (orderedIds: number[]): Promise<void> => {
+  if (orderedIds.length === 0) return;
+  // Single transaction so a half-written order can never stick.
+  await db.withTransactionAsync(async () => {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await db.runAsync('UPDATE todos SET sort_order = ? WHERE id = ?', [i, orderedIds[i]]);
+    }
+  });
 };
 
 export const updateTodo = async (id: number, text: string): Promise<void> => {

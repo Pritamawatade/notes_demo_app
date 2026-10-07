@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   TextInput,
   KeyboardAvoidingView,
@@ -13,7 +12,16 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Todo, getTodos, addTodo, updateTodo, toggleTodo, deleteTodo } from '../database/db';
+import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
+import {
+  Todo,
+  getTodos,
+  addTodo,
+  updateTodo,
+  toggleTodo,
+  deleteTodo,
+  setTodoOrder,
+} from '../database/db';
 import { TodoItem } from '../components/TodoItem';
 import { useTheme } from '../theme/useTheme';
 
@@ -24,29 +32,52 @@ const TODO_TYPES = [
   { label: 'Yearly', value: 'yearly' },
 ];
 
+const emptyLists = (): Record<string, Todo[]> => ({
+  daily: [],
+  weekly: [],
+  monthly: [],
+  yearly: [],
+});
+
 export const TodoScreen = () => {
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const [todosByType, setTodosByType] = useState<Record<string, Todo[]>>(emptyLists);
   const [activeType, setActiveType] = useState<string>('daily');
   const [inputText, setInputText] = useState('');
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const isFocused = useIsFocused();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const inputRef = useRef<TextInput>(null);
 
   const loadTodos = useCallback(async () => {
     try {
-      const fetchedTodos = await getTodos(activeType);
-      setTodos(fetchedTodos);
+      const results = await Promise.all(TODO_TYPES.map((t) => getTodos(t.value)));
+      setTodosByType({
+        daily: results[0],
+        weekly: results[1],
+        monthly: results[2],
+        yearly: results[3],
+      });
     } catch (e) {
       console.warn(e);
     }
-  }, [activeType]);
+  }, []);
 
   useEffect(() => {
     if (isFocused) {
       loadTodos();
     }
   }, [isFocused, loadTodos]);
+
+  // Pop the keyboard up whenever we start editing (tapping the pencil),
+  // so the user can type right away. autoFocus only fires on mount,
+  // which is why the keyboard stayed hidden before.
+  useEffect(() => {
+    if (editingTodo) {
+      const t = setTimeout(() => inputRef.current?.focus(), 100);
+      return () => clearTimeout(t);
+    }
+  }, [editingTodo]);
 
   const handleAddTodo = async () => {
     const text = inputText.trim();
@@ -63,6 +94,10 @@ export const TodoScreen = () => {
   };
 
   const handleEditTodo = (todo: Todo) => {
+    // Jump to the tab that owns this task, so edits happen in context.
+    if (todo.type !== activeType) {
+      setActiveType(todo.type);
+    }
     setEditingTodo(todo);
     setInputText(todo.text);
   };
@@ -82,6 +117,33 @@ export const TodoScreen = () => {
     loadTodos();
   };
 
+  /** Finger-drag reorder: long-press a row (or its handle) and move it up/down. */
+  const handleDragEnd = async ({ data }: { data: Todo[] }) => {
+    setTodosByType((prev) => ({ ...prev, [activeType]: data }));
+    try {
+      await setTodoOrder(data.map((t) => t.id!));
+    } catch (e) {
+      console.warn(e);
+      loadTodos();
+    }
+  };
+
+  const renderItem = useCallback(
+    ({ item, drag, isActive }: RenderItemParams<Todo>) => (
+      <TodoItem
+        todo={item}
+        onToggle={() => handleToggleTodo(item)}
+        onEdit={() => handleEditTodo(item)}
+        onDelete={() => handleDeleteTodo(item.id!)}
+        drag={drag}
+        isActive={isActive}
+      />
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeType, todosByType]
+  );
+
+  const todos = todosByType[activeType] ?? [];
   const remaining = todos.filter((t) => t.is_completed === 0).length;
   const progressLine =
     todos.length === 0
@@ -97,67 +159,66 @@ export const TodoScreen = () => {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
     >
       <View style={styles.content}>
-      <View style={styles.headerSection}>
-        <Text style={[styles.kicker, { color: theme.textSecondary }]}>Stay on track</Text>
-        <Text style={[styles.title, { color: theme.text }]}>Checklists</Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          {progressLine}
-        </Text>
-      </View>
+        <View style={styles.headerSection}>
+          <Text style={[styles.kicker, { color: theme.textSecondary }]}>Stay on track</Text>
+          <Text style={[styles.title, { color: theme.text }]}>Checklists</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+            {progressLine}
+          </Text>
+          <Text style={[styles.sortHint, { color: theme.textSecondary }]}>
+            Long-press a task and drag it up or down to reorder.
+          </Text>
+        </View>
 
-      <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {TODO_TYPES.map((type) => {
-            const active = activeType === type.value;
-            return (
-              <TouchableOpacity
-                key={type.value}
-                style={[
-                  styles.filterChip,
-                  {
-                    backgroundColor: active ? theme.primary : theme.surface,
-                    borderColor: active ? theme.primary : theme.border,
-                  },
-                ]}
-                onPress={() => setActiveType(type.value)}
-              >
-                <Text style={[styles.filterText, { color: active ? theme.onPrimary : theme.textSecondary }]}>
-                  {type.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
+        <View style={styles.filterContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+            {TODO_TYPES.map((type) => {
+              const active = activeType === type.value;
+              return (
+                <TouchableOpacity
+                  key={type.value}
+                  style={[
+                    styles.filterChip,
+                    {
+                      backgroundColor: active ? theme.primary : theme.surface,
+                      borderColor: active ? theme.primary : theme.border,
+                    },
+                  ]}
+                  onPress={() => setActiveType(type.value)}
+                >
+                  <Text style={[styles.filterText, { color: active ? theme.onPrimary : theme.textSecondary }]}>
+                    {type.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-      <FlatList
-        style={styles.list}
-        data={todos}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <TodoItem
-            todo={item}
-            onToggle={() => handleToggleTodo(item)}
-            onEdit={() => handleEditTodo(item)}
-            onDelete={() => handleDeleteTodo(item.id!)}
-          />
-        )}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <View style={[styles.emptyIcon, { backgroundColor: theme.primarySoft }]}>
-              <MaterialIcons name="playlist-add-check" size={36} color={theme.primary} />
+        <DraggableFlatList
+          key={activeType}
+          containerStyle={styles.list}
+          style={styles.list}
+          data={todos}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderItem}
+          onDragEnd={handleDragEnd}
+          activationDistance={8}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <View style={[styles.emptyIcon, { backgroundColor: theme.primarySoft }]}>
+                <MaterialIcons name="playlist-add-check" size={36} color={theme.primary} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>No {activeType} tasks</Text>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                Add one below to start this list.
+              </Text>
             </View>
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>No {activeType} tasks</Text>
-            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-              Add one below to start this list.
-            </Text>
-          </View>
-        }
-      />
-
+          }
+        />
       </View>
 
       <View
@@ -171,6 +232,7 @@ export const TodoScreen = () => {
         ]}
       >
           <TextInput
+            ref={inputRef}
             style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.border }]}
             placeholder={editingTodo ? 'Edit task' : `Add a ${activeType} task`}
             placeholderTextColor={theme.textSecondary}
@@ -178,7 +240,6 @@ export const TodoScreen = () => {
             onChangeText={setInputText}
             onSubmitEditing={handleAddTodo}
             returnKeyType="done"
-            autoFocus={editingTodo !== null}
           />
           {editingTodo && (
             <TouchableOpacity onPress={handleCancelEdit} hitSlop={8} style={styles.cancelButton}>
@@ -210,6 +271,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 4,
+  },
+  sortHint: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 8,
   },
   kicker: {
     fontSize: 13,
